@@ -1,9 +1,14 @@
+#include <charconv>
+#include <cstddef>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <string_view>
+#include <system_error>
 #include <vector>
 
 #include "sqlite3.h"
@@ -84,8 +89,86 @@ public:
 
     static RecordData column_text_to_record_data(sqlite3_stmt* stmt, int index, RType rtype) {
         std::string data = column_text_to_string_view(stmt, index);
-        // For the morrow... 
+
+        switch (rtype) {
+            case RType::A:
+                return RecordData{string_to_IPv4(data)};
+                break;
+            case RType::AAAA:
+                break;
+            case RType::NAPTR:
+                break;
+            default:
+                break;
+        }
+
         return RecordData{};
+    }
+
+    static IPv4 string_to_IPv4(std::string_view ip) {
+        IPv4 data;
+
+        // TODO: error handling
+        for (std::size_t i{0}; i < 4; i++) {
+            auto dot = ip.find('.') ;
+
+            auto part = (dot == std::string_view::npos)
+                ? ip // Last item in the array
+                : ip.substr(0, dot);
+
+            int value;
+
+            auto [ptr, ec] = std::from_chars(
+                part.data(),
+                part.data() + part.size(),
+                value
+            );
+
+            if (ec != std::errc{} || ptr != part.data() + part.size()) {
+                throw std::invalid_argument{"Invalid IPv4 Address"};
+            }
+
+            data[i] = static_cast<std::uint8_t>(value);
+            
+            if (i < 3) {
+                ip.remove_prefix(dot + 1);
+            }
+        }
+
+        return data;
+    }
+
+    static IPv6 string_to_IPv6(std::string_view ip) {
+        IPv6 data{};
+
+        auto double_colon = ip.find("::");
+
+        auto colon = ip.find(":", double_colon + 2);
+
+        std::size_t end_zeros_idx{data.size() - 1};
+        while (colon != std::string::npos) {
+            end_zeros_idx -= 1; 
+            colon = ip.find(":", colon + 1);
+        }
+        // 1234:2133:aa2d::32d
+
+        while (!ip.empty()) {
+            auto colon = ip.find(":");
+
+            auto part = (colon == std::string::npos)
+                ? ip
+                : ip.substr(0, colon);
+
+            // process...
+
+            if (part.compare(":")) {
+                
+            }
+
+            if (colon != std::string::npos) {
+                ip.remove_prefix(colon + 1);
+            }
+        }
     }
 
 private:
