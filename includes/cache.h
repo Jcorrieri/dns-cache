@@ -69,7 +69,7 @@ struct CacheEntry {
 
 class KVCache {
     private:
-        std::unordered_map<CacheKey, CacheEntry, KeyHash> cache {};
+        std::unordered_map<CacheKey, CacheEntry, KeyHash> m_cache {};
 
     public:
         void emplace(const CacheKey key, const CacheEntry entry);

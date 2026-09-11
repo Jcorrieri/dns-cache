@@ -4,11 +4,11 @@
 #include <unordered_map>
 
 void KVCache::emplace(const CacheKey key, const CacheEntry entry) {
-    cache.emplace(key, entry);
+    m_cache.emplace(key, entry);
 }
 
 std::optional<CacheEntry> KVCache::find(const CacheKey key) const {
-    if (auto entry = cache.find(key); entry != cache.end()) { //cache miss
+    if (auto entry = m_cache.find(key); entry != m_cache.end()) { //cache miss
         return entry->second;
     } else {
         return std::nullopt;
@@ -16,7 +16,7 @@ std::optional<CacheEntry> KVCache::find(const CacheKey key) const {
 }
 
 std::size_t KVCache::count(const CacheKey key) const {
-    return cache.count(key);
+    return m_cache.count(key);
 }
 
 // See https://en.cppreference.com/cpp/utility/hash

@@ -1,10 +1,97 @@
-#include "database.h"
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include "sqlite3.h"
+#include "database.h"
+#include "cache.h"
+
+
+class Repository {
+public:
+    explicit Repository(Database& db) : m_db{db} {
+        m_stmt = m_db.prepare(R"(
+            SELECT r_owner, r_type, r_data, ttl
+            FROM records
+            WHERE r_owner = ?;
+        )");
+    }
+
+    ~Repository() { sqlite3_finalize(m_stmt); }
+
+    // TODO: Refresh statement rather than creating new ones
+    CacheEntry fetch_from_db(const std::string_view r_name) const {
+        CacheEntry entry{
+            time(0),
+            std::vector<Record>{},
+            std::vector<Record>{},
+            std::vector<Record>{},
+            3600,
+            0
+        };
+
+        sqlite3_bind_text(
+            m_stmt, 
+            1, // 1-indexed parameters
+            r_name.data(),
+            r_name.size(),
+            SQLITE_TRANSIENT
+        );
+
+        int rc;
+        while ((rc = sqlite3_step(m_stmt)) == SQLITE_ROW) {
+            auto owner = column_text_to_string_view(m_stmt, 0);
+            auto rtype = column_text_to_rtype(m_stmt, 1);
+            auto data = column_text_to_record_data(m_stmt, 2, rtype);
+            auto ttl = static_cast<float>(sqlite3_column_double(m_stmt, 3));
+
+            entry.answers.push_back(Record{owner, ttl, rtype, data});
+        }
+
+        sqlite3_reset(m_stmt);
+
+        return entry;
+    }
+
+    static std::string column_text_to_string_view(sqlite3_stmt* stmt, int index) {
+        const unsigned char* column_text = sqlite3_column_text(stmt, index);
+        int bytes = sqlite3_column_bytes(stmt, index);
+
+        std::string value{
+            reinterpret_cast<const char*>(column_text),
+            static_cast<std::size_t>(bytes)
+        };
+
+        return value;
+    }
+
+    static RType column_text_to_rtype(sqlite3_stmt* stmt, int index) {
+        std::string type = column_text_to_string_view(stmt, index);
+
+        if (type == "A") return RType::A;
+        if (type == "AAAA") return RType::AAAA;
+        if (type == "TXT") return RType::TXT;
+        if (type == "SVCB") return RType::SVCB;
+        if (type == "CNAME") return RType::CNAME;
+        if (type == "NAAPTR") return RType::NAPTR;
+
+        return RType::AAAA;
+    }
+
+    static RecordData column_text_to_record_data(sqlite3_stmt* stmt, int index, RType rtype) {
+        std::string data = column_text_to_string_view(stmt, index);
+        // For the morrow... 
+        return RecordData{};
+    }
+
+private:
+    Database& m_db;
+    sqlite3_stmt* m_stmt;
+};
 
 std::string read_file(const std::string& data_path) {
     std::ifstream sql_file(data_path);
@@ -32,33 +119,6 @@ int main() {
 
         std::cout << "[LOG] Loaded Database\n";
     }
-
-    const std::string fetch_record_query = R"(
-        SELECT r_owner, r_type, r_data, ttl
-        FROM records
-        WHERE r_owner = ?;
-    )";
-
-    sqlite3_stmt* stmt = db.prepare(fetch_record_query);
-
-    sqlite3_bind_text(
-        stmt, 
-        1, // 1-indexed parameters
-        "example.com",
-        -1,
-        SQLITE_TRANSIENT
-    );
-
-    int rc;
-    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-        auto owner = sqlite3_column_text(stmt, 0);
-        auto type = sqlite3_column_text(stmt, 1);
-        auto data = sqlite3_column_text(stmt, 2);
-        auto ttl = sqlite3_column_double(stmt, 3);
-        std::cout << owner << " " << type << " " << data << " " << ttl << '\n';
-    }
-
-    sqlite3_finalize(stmt);
     
     return 0;
 }
