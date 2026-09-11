@@ -10,6 +10,8 @@ add_executable(app
     src/main.cpp
     src/cache.cpp
     src/database.cpp
+    src/record_repository.cpp
+    src/parse_utils.cpp
     external/sqlite/sqlite3.c
 )
 

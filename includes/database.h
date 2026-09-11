@@ -1,9 +1,11 @@
 #ifndef JC_BP_DB_RAII
 #define JC_BP_DB_RAII
 
-#include <sqlite3.h>
 #include <string>
 #include <string_view>
+
+struct sqlite3_stmt;
+struct sqlite3;
 
 class Database {
 public:

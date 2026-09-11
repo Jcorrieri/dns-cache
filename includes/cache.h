@@ -28,8 +28,8 @@ using RecordData = std::variant<IPv4, IPv6, Naptr>; // Should be 136B + 8B tag =
 enum class RType {
     A,
     AAAA,
-    TXT,
-    SVCB,
+    // TXT,
+    // SVCB,
     CNAME,
     NAPTR,
 };
