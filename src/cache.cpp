@@ -1,13 +1,18 @@
 #include "cache.h"
 #include <cstddef>
+#include <optional>
 #include <unordered_map>
 
-auto KVCache::emplace(const CacheKey key, const CacheEntry entry) {
-    return cache.emplace(key, entry);
+void KVCache::emplace(const CacheKey key, const CacheEntry entry) {
+    cache.emplace(key, entry);
 }
 
-auto KVCache::find(const CacheKey key) const {
-    return cache.find(key);
+std::optional<CacheEntry> KVCache::find(const CacheKey key) const {
+    if (auto entry = cache.find(key); entry != cache.end()) { //cache miss
+        return entry->second;
+    } else {
+        return std::nullopt;
+    }
 }
 
 std::size_t KVCache::count(const CacheKey key) const {

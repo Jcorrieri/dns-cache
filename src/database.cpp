@@ -1,16 +1,63 @@
-#include <filesystem>
-#include "../external/sqlite-amalgamation-3530400/sqlite3.h" // TODO: Fix this bologne....
+#include <stdexcept>
+#include <sqlite3.h>
+#include "database.h"
 
-void init_database(const std::string_view db_name) {
-    if (!std::filesystem::exists(db_name)) {
-        return;
+// Prefer const string& to pass cstr to API
+Database::Database(const std::string& db_path) {
+    if (sqlite3_open(db_path.c_str(), &m_db) != SQLITE_OK) {
+        std::string message{sqlite3_errmsg(m_db)};
+
+        sqlite3_close(m_db);
+        m_db = nullptr;
+
+        throw std::runtime_error{
+            "Failed to open SQLite database: " + message
+        };
     }
 }
 
-int main() {
-    const std::string db_name{"temp.db"};
+Database::~Database() noexcept {
+    if (m_db != nullptr) {
+        sqlite3_close(m_db);
+    }
+};
 
-    sqlite3 *db = nullptr;
+sqlite3_stmt* Database::prepare(std::string_view sql) const {
+    sqlite3_stmt* stmt{nullptr};
 
-    return 0;
+    int rc = sqlite3_prepare_v3(
+        m_db,
+        sql.data(),
+        sql.size(),
+        0,
+        &stmt,
+        nullptr
+    );
+
+    if (rc != SQLITE_OK) {
+        throw std::runtime_error{sqlite3_errmsg(m_db)};
+    }
+
+    return stmt;
+};
+
+void Database::execute(const std::string& sql) const {
+    char* error_message{nullptr};
+
+    int rc = sqlite3_exec(
+        m_db,
+        sql.c_str(),
+        nullptr,
+        nullptr,
+        &error_message
+    );
+
+    if (rc != SQLITE_OK) {
+        throw std::runtime_error{sqlite3_errmsg(m_db)};
+    }
 }
+
+sqlite3* Database::get() const {
+    return m_db;
+}
+

@@ -3,11 +3,11 @@
 
 #include <array>
 #include <cstddef>
+#include <optional>
 #include <unordered_map>
 #include <cstdint>
 #include <ctime>
 #include <string>
-#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -72,8 +72,10 @@ class KVCache {
         std::unordered_map<CacheKey, CacheEntry, KeyHash> cache {};
 
     public:
-        auto emplace(const CacheKey key, const CacheEntry entry);
-        auto find(const CacheKey key) const;
+        void emplace(const CacheKey key, const CacheEntry entry);
+
+        std::optional<CacheEntry> find(const CacheKey key) const;
+
         std::size_t count(const CacheKey key) const;
 };
 
