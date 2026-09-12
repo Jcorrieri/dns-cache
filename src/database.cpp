@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <format>
 #include <sqlite3.h>
 #include "database.h"
 
@@ -53,7 +54,8 @@ void Database::execute(const std::string& sql) const {
     );
 
     if (rc != SQLITE_OK) {
-        throw std::runtime_error{sqlite3_errmsg(m_db)};
+        std::string error_message = std::format("Error executing sql: {}", sqlite3_errmsg(m_db));
+        throw std::runtime_error{error_message};
     }
 }
 

@@ -11,8 +11,13 @@
 #include <variant>
 #include <vector>
 
-using IPv4 = std::array<std::uint8_t, 4>;
-using IPv6 = std::array<std::uint16_t, 8>;
+struct IPv4Address {
+    std::array<std::uint8_t, 4> bytes;
+};
+
+struct IPv6Address {
+    std::array<std::uint16_t, 8> bytes;
+};
 
 struct Naptr {
     std::uint32_t int1;      // 4B
@@ -23,7 +28,11 @@ struct Naptr {
     std::string textField3;  // 32B
 };                           // Total: 136B
 
-using RecordData = std::variant<IPv4, IPv6, Naptr>; // Should be 136B + 8B tag = 144B
+std::ostream& operator<<(std::ostream& os, const IPv4Address& addr);
+std::ostream& operator<<(std::ostream& os, const IPv6Address& addr);
+std::ostream& operator<<(std::ostream& os, const Naptr& addr);
+
+using RecordData = std::variant<IPv4Address, IPv6Address, Naptr>; // Should be 136B + 8B tag = 144B
 
 enum class RType {
     A,

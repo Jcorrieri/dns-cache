@@ -19,7 +19,6 @@ Repository::~Repository() {
     sqlite3_finalize(m_stmt);
 }
 
-// TODO: Refresh statement rather than creating new ones
 CacheEntry Repository::fetch_from_db(const std::string_view r_name) const {
     CacheEntry entry{
         time(0),
