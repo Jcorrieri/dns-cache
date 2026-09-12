@@ -7,6 +7,7 @@
 #include <string>
 #include <variant>
 
+#include "parse_utils.h"
 #include "database.h"
 #include "record_repository.h"
 
@@ -21,6 +22,20 @@ std::string read_file(const std::string& data_path) {
     ss << sql_file.rdbuf();
 
     return ss.str();
+}
+
+void print_entry(const CacheEntry& entry) {
+    for (auto& record : entry.answers) {
+        std::string rtype = RType_to_string(record.rtype);
+
+        std::cout << std::format("{:8} {:^8} {:<8} {:8} ", record.owner, "IN", record.ttl, rtype);
+
+        std::visit([](const auto& value) {
+            std::cout << value;
+        }, record.data);
+
+        std::cout << '\n';
+    }
 }
 
 int main() {
@@ -38,36 +53,17 @@ int main() {
         std::cout << "[LOG] Loaded Database\n";
     }
     
-    Repository repo{db};
-    CacheEntry entry = repo.fetch_from_db("example.com");
-    for (auto& record : entry.answers) {
-        std::string rtype;
+    KVCache cache{};
+    Repository repo{db, cache};
 
-        switch (record.rType) {
-            case RType::A: 
-                rtype = "A";
-                break;
-            case RType::AAAA:
-                rtype = "AAAA";
-                break;
-            case RType::CNAME:
-                rtype = "CNAME";
-                break;
-            case RType::NAPTR:
-                rtype = "NAPTR";
-                break;
-            default:
-                rtype = "Not Defined";
-        }
+    // simulate query
+    CacheKey key{"example.com", RType::CNAME};
+    repo.get_entry(key);
 
-        std::cout << std::format("{} {} {}\n", record.owner, rtype, record.ttl);
+    key = {"example.com", RType::AAAA};
+    CacheEntry entry = repo.get_entry(key);
 
-        std::visit([](const auto& value) {
-            std::cout << value;
-        }, record.data);
+    print_entry(entry);
 
-        std::cout << '\n';
-    }
-    
     return 0;
 }

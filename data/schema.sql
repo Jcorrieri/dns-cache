@@ -1,13 +1,13 @@
 CREATE TABLE records (
-    r_id      INTEGER  PRIMARY KEY,
-    r_owner   TEXT     NOT NULL,
-    r_type    TEXT     NOT NULL,
+    id        INTEGER  PRIMARY KEY,
+    owner     TEXT     NOT NULL,
+    type      TEXT     NOT NULL,
     ttl       REAL     DEFAULT 3600 NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    r_data    TEXT     NOT NULL
+    data      TEXT     NOT NULL
 );
 
-INSERT INTO records (r_owner, r_type, r_data)
+INSERT INTO records (owner, type, data)
 VALUES 
 ("example.com", "A", "192.0.2.10"),
 ("example.com", "AAAA", "2001:db8::10"),

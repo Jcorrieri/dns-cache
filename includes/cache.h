@@ -11,6 +11,8 @@
 #include <variant>
 #include <vector>
 
+using Cname = std::string;
+
 struct IPv4Address {
     std::array<std::uint8_t, 4> bytes;
 };
@@ -32,7 +34,7 @@ std::ostream& operator<<(std::ostream& os, const IPv4Address& addr);
 std::ostream& operator<<(std::ostream& os, const IPv6Address& addr);
 std::ostream& operator<<(std::ostream& os, const Naptr& addr);
 
-using RecordData = std::variant<IPv4Address, IPv6Address, Naptr>; // Should be 136B + 8B tag = 144B
+using RecordData = std::variant<IPv4Address, IPv6Address, Cname, Naptr>; // Should be 136B + 8B tag = 144B
 
 enum class RType {
     A,
@@ -45,8 +47,8 @@ enum class RType {
 
 struct Record {
     std::string owner; // 32B
-    float ttl;         // 4B
-    RType rType;       // 4B
+    float ttl{0};         // 4B
+    RType rtype;       // 4B
     RecordData data;   // 144B 
 };                     // Total 184B
 
@@ -55,8 +57,8 @@ struct Record {
 struct CacheKey {
     std::string qname;
     RType qtype;
-    bool authenticated;
-    std::vector<std::uint8_t> tag;
+    // bool authenticated;
+    // std::vector<std::uint8_t> tag;
 
     bool operator==(const CacheKey& other) const {
         return qname == other.qname && qtype == other.qtype;
@@ -72,8 +74,8 @@ struct CacheEntry {
     std::vector<Record> answers;     // Default vec alloc len * sizeof(Record) = N * 184B = a lot
     std::vector<Record> authority;   // But vec allocates on heap; inline is likely implementation-defined (24B; pointer + length + capacity)
     std::vector<Record> additional;
-    float ttl;
-    std::uint8_t hits;
+    float ttl{0};
+    std::uint8_t hits{0};
 };                                   // (24 * 3) + 4 + 1 + 8 = 72 + 5 + 8 = 77 + 8 = 85 + (3) for alignment
 
 class KVCache {
@@ -86,6 +88,8 @@ class KVCache {
         std::optional<CacheEntry> find(const CacheKey key) const;
 
         std::size_t count(const CacheKey key) const;
+
+        bool contains(const CacheKey key) const;
 };
 
 #endif

@@ -1,8 +1,6 @@
 #ifndef JC_BP_RECORD_REPOSITORY
 #define JC_BP_RECORD_REPOSITORY
 
-#include <string_view>
-
 #include "cache.h"
 #include "database.h"
 
@@ -10,15 +8,18 @@ struct sqlite3_stmt;
 
 class Repository {
 public:
-    explicit Repository(Database& db);
+    explicit Repository(Database& db, KVCache& cache);
 
     ~Repository();
 
-    CacheEntry fetch_from_db(std::string_view r_name) const;
+    CacheEntry get_entry(const CacheKey& key) const;
 
 private:
     Database& m_db;
+    KVCache& m_cache;
     sqlite3_stmt* m_stmt;
+
+    CacheEntry fetch_from_db(const CacheKey& key) const;
 };
 
 #endif

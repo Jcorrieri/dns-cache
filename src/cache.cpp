@@ -50,6 +50,10 @@ std::optional<CacheEntry> KVCache::find(const CacheKey key) const {
     }
 }
 
+bool KVCache::contains(const CacheKey key) const {
+    return find(key) != std::nullopt;
+}
+
 std::size_t KVCache::count(const CacheKey key) const {
     return m_cache.count(key);
 }

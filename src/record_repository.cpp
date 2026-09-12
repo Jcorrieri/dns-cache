@@ -7,11 +7,14 @@
 #include "parse_utils.h"
 #include "sqlite3.h"
 
-Repository::Repository(Database& db) : m_db{db} {
+Repository::Repository(Database& db, KVCache& cache) 
+: 
+    m_db{db}, m_cache{cache}
+{
     m_stmt = m_db.prepare(R"(
-        SELECT r_owner, r_type, r_data, ttl
+        SELECT owner, type, data, ttl
         FROM records
-        WHERE r_owner = ?;
+        WHERE owner = ? AND type = ?
     )");
 }
 
@@ -19,7 +22,7 @@ Repository::~Repository() {
     sqlite3_finalize(m_stmt);
 }
 
-CacheEntry Repository::fetch_from_db(const std::string_view r_name) const {
+CacheEntry Repository::fetch_from_db(const CacheKey& key) const {
     CacheEntry entry{
         time(0),
         std::vector<Record>{},
@@ -32,8 +35,17 @@ CacheEntry Repository::fetch_from_db(const std::string_view r_name) const {
     sqlite3_bind_text(
         m_stmt,
         1, // 1-indexed parameters
-        r_name.data(),
-        r_name.size(),
+        key.qname.data(),
+        key.qname.size(),
+        SQLITE_TRANSIENT
+    );
+
+    std::string rtype_str = RType_to_string(key.qtype);
+    sqlite3_bind_text(
+        m_stmt,
+        2,
+        rtype_str.data(),
+        rtype_str.size(),
         SQLITE_TRANSIENT
     );
 
@@ -52,3 +64,16 @@ CacheEntry Repository::fetch_from_db(const std::string_view r_name) const {
     return entry;
 }
 
+CacheEntry Repository::get_entry(const CacheKey& key) const {
+    CacheEntry entry{};
+
+    if (m_cache.contains(key)) {
+        entry = *m_cache.find(key);
+        entry.hits++;
+    } else {
+        entry = fetch_from_db(key);
+        m_cache.emplace(key, entry);
+    }
+
+    return entry;
+}

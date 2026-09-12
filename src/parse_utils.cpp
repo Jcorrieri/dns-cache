@@ -1,13 +1,13 @@
 #include "parse_utils.h"
 
 #include <charconv>
-#include <iostream>
 #include <cstddef>
 #include <stdexcept>
 #include <string>
 #include <format>
 #include <system_error>
 
+#include "cache.h"
 #include "sqlite3.h"
 
 IPv4Address string_to_IPv4(std::string_view ip) {
@@ -112,6 +112,29 @@ RType column_text_to_rtype(sqlite3_stmt* stmt, int index) {
     return RType::AAAA;
 }
 
+std::string RType_to_string(RType rtype) {
+    std::string rtype_str;
+
+    switch (rtype) {
+        case RType::A: 
+            rtype_str = "A";
+            break;
+        case RType::AAAA:
+            rtype_str = "AAAA";
+            break;
+        case RType::CNAME:
+            rtype_str = "CNAME";
+            break;
+        case RType::NAPTR:
+            rtype_str = "NAPTR";
+            break;
+        default:
+            rtype_str = "Not Defined";
+    }
+
+    return rtype_str;
+}
+
 RecordData column_text_to_record_data(sqlite3_stmt* stmt, int index, RType rtype) {
     std::string data = column_text_to_string_view(stmt, index);
 
@@ -123,6 +146,9 @@ RecordData column_text_to_record_data(sqlite3_stmt* stmt, int index, RType rtype
             return RecordData{string_to_IPv6(data)};
             break;
         case RType::NAPTR:
+            break;
+        case RType::CNAME:
+            return RecordData{data};
             break;
         default:
             break;
