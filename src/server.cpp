@@ -66,6 +66,9 @@ std::optional<CacheKey> parse_request(std::string_view request) {
 }
 
 void spawn_worker(RequestQueue& queue, KVCache& cache) {
+    Database db{constants::db_path};
+    RecordRepository repo{db, cache};
+
     while (true) {
         int fd = queue.consume();
 
@@ -78,9 +81,6 @@ void spawn_worker(RequestQueue& queue, KVCache& cache) {
             close(fd);
             continue;
         }
-
-        Database db{constants::db_path};
-        RecordRepository repo{db, cache};
 
         const CacheEntry entry = repo.get_entry(*key);
 
