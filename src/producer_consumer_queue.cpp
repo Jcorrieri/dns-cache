@@ -1,9 +1,7 @@
-#include <format>
 #include <cstddef>
-#include <iostream>
 #include "producer_consumer_queue.h"
 
-bool RequestQueue::produce(int value, int thread_id) {
+bool RequestQueue::produce(int value) {
     {
         std::unique_lock lock{m_mutex};
         m_queue_has_space.wait(lock, [this] {
@@ -14,11 +12,11 @@ bool RequestQueue::produce(int value, int thread_id) {
             return false;
         }
 
-        std::cout << std::format("[LOG] producer {} added {} to the queue.\n", thread_id, value);
-
-        if (size() == s_max_size) {
-            std::cout << "[LOG] queue is full.\n";
-        }
+        // std::cout << std::format("[LOG] producer {} added {} to the queue.\n", thread_id, value);
+        //
+        // if (size() == s_max_size) {
+        //     std::cout << "[LOG] queue is full.\n";
+        // }
     }
 
     m_queue_not_empty.notify_one();
@@ -26,7 +24,7 @@ bool RequestQueue::produce(int value, int thread_id) {
     return true;
 }
 
-int RequestQueue::consume(int thread_id) {
+int RequestQueue::consume() {
     int item;
     {
         std::unique_lock lock{m_mutex};
@@ -36,11 +34,11 @@ int RequestQueue::consume(int thread_id) {
 
         item = *dequeue();
 
-        std::cout << std::format("[LOG] consumer {} consumed {} from the queue.\n", thread_id, item);
-
-        if (empty()) {
-            std::cout << "[LOG] Queue is empty\n";
-        }
+        // std::cout << std::format("[LOG] consumer {} consumed {} from the queue.\n", thread_id, item);
+        //
+        // if (empty()) {
+        //     std::cout << "[LOG] Queue is empty\n";
+        // }
     }
 
     m_queue_has_space.notify_one();

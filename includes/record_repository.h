@@ -6,11 +6,11 @@
 
 struct sqlite3_stmt;
 
-class Repository {
+class RecordRepository {
 public:
-    explicit Repository(Database& db, KVCache& cache);
+    explicit RecordRepository(Database& db, KVCache& cache);
 
-    ~Repository();
+    ~RecordRepository();
 
     CacheEntry get_entry(const CacheKey& key) const;
 

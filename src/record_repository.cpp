@@ -1,14 +1,54 @@
 #include "record_repository.h"
 
 #include <ctime>
+#include <stdexcept>
+#include <string>
 #include <string_view>
 #include <vector>
 
 #include "parse_utils.h"
 #include "sqlite3.h"
 
-Repository::Repository(Database& db, KVCache& cache) 
-: 
+namespace {
+RType string_to_rtype(std::string_view type) {
+    if (type == "A") {
+        return RType::A;
+    }
+    if (type == "AAAA") {
+        return RType::AAAA;
+    }
+    if (type == "CNAME") {
+        return RType::CNAME;
+    }
+    if (type == "NAPTR") {
+        return RType::NAPTR;
+    }
+
+    throw std::invalid_argument{"Unsupported record type"};
+}
+
+RType column_text_to_rtype(sqlite3_stmt* stmt, int index) {
+    return string_to_rtype(column_text_to_string_view(stmt, index));
+}
+
+std::string_view rtype_to_string(RType rtype) {
+    switch (rtype) {
+        case RType::A:
+            return "A";
+        case RType::AAAA:
+            return "AAAA";
+        case RType::CNAME:
+            return "CNAME";
+        case RType::NAPTR:
+            return "NAPTR";
+    }
+
+    throw std::invalid_argument{"Unsupported record type"};
+}
+}
+
+RecordRepository::RecordRepository(Database& db, KVCache& cache)
+:
     m_db{db}, m_cache{cache}
 {
     m_stmt = m_db.prepare(R"(
@@ -18,11 +58,11 @@ Repository::Repository(Database& db, KVCache& cache)
     )");
 }
 
-Repository::~Repository() {
+RecordRepository::~RecordRepository() {
     sqlite3_finalize(m_stmt);
 }
 
-CacheEntry Repository::fetch_from_db(const CacheKey& key) const {
+CacheEntry RecordRepository::fetch_from_db(const CacheKey& key) const {
     CacheEntry entry{
         time(0),
         std::vector<Record>{},
@@ -40,7 +80,7 @@ CacheEntry Repository::fetch_from_db(const CacheKey& key) const {
         SQLITE_TRANSIENT
     );
 
-    std::string rtype_str = RType_to_string(key.qtype);
+    const std::string_view rtype_str = rtype_to_string(key.qtype);
     sqlite3_bind_text(
         m_stmt,
         2,
@@ -64,7 +104,7 @@ CacheEntry Repository::fetch_from_db(const CacheKey& key) const {
     return entry;
 }
 
-CacheEntry Repository::get_entry(const CacheKey& key) const {
+CacheEntry RecordRepository::get_entry(const CacheKey& key) const {
     if (auto cached = m_cache.find(key)) {
         return *cached;
     }

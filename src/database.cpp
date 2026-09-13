@@ -8,7 +8,7 @@ Database::Database(const std::string& db_path) {
     int rc = sqlite3_open_v2(
         db_path.c_str(), 
         &m_db, 
-        SQLITE_OPEN_READONLY, // Read only for this MVP
+        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
         nullptr
     );
 

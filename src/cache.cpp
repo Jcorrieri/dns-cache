@@ -1,42 +1,45 @@
 #include "cache.h"
-#include <cstddef>
+
+#include <format>
 #include <mutex>
 #include <optional>
 #include <ostream>
+#include <string_view>
 #include <unordered_map>
 
-// IO utils for IP address structs
-
-std::ostream& operator<<(std::ostream& os, const IPv4Address& addr) {
-    for (std::size_t i{0}; i < addr.bytes.size(); i++) {
-        if (i > 0) {
-            os << '.';
-        }
-
-        os << static_cast<int>(addr.bytes[i]);
-    }
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const IPv6Address& addr) {
-    const auto flags = os.flags(); // Save flags since we're using std::hex
-
-    os << std::hex;
-
-    for (std::size_t i{0}; i < addr.bytes.size(); i++) {
-        if (i > 0) {
-            os << ':';
-        }
-
-        os << addr.bytes[i];
+std::string_view rtype_to_string(RType rtype) {
+    switch (rtype) {
+        case RType::A:
+            return "A";
+        case RType::AAAA:
+            return "AAAA";
+        case RType::CNAME:
+            return "CNAME";
+        case RType::NAPTR:
+            return "NAPTR";
     }
 
-    os.flags(flags); // restore caller flags
-    return os;
+    return "Not Defined";
 }
 
-std::ostream& operator<<(std::ostream& os, const Naptr& addr) {
-    return os << addr.domainName;
+std::ostream& operator<<(std::ostream& os, const CacheEntry& entry) {
+    for (const auto& record : entry.answers) {
+        os << std::format(
+            "{:12} {:^12} {:<12} {:12} ",
+            record.owner,
+            "IN",
+            record.ttl,
+            rtype_to_string(record.rtype)
+        );
+
+        std::visit([&os](const auto& value) {
+            os << value;
+        }, record.data);
+
+        os << '\n';
+    }
+
+    return os;
 }
 
 // Need to lock read functions as well to prevent data inconsistency/UB

@@ -1,6 +1,13 @@
+#include "cache.h"
+#include "database.h"
+#include "producer_consumer_queue.h"
+#include "record_repository.h"
+#include <filesystem>
+#include <fstream>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/unistd.h>
+#include <sqlite3.h>
 
 #include <cstring>
 #include <iostream>
@@ -8,19 +15,20 @@
 #include <string>
 
 constexpr const char* SOCKET_PATH{"/tmp/dns-cache.sock"};
+const std::string db_name = "dns.db";
 
-void handle_client(int client_fd) {
+std::string parse_request(int fd) {
     char buffer[1024]; // Allocate buffer to store client request message
 
     const ssize_t n = recv(  // read sizeof(buffer) bytes
-        client_fd,
+        fd,
         buffer,
         sizeof(buffer),
         0
     );
 
     if (n == -1) {
-        return;
+        return "";
     }
 
     std::string request{
@@ -28,19 +36,35 @@ void handle_client(int client_fd) {
         static_cast<std::size_t>(n)
     };
 
-    std::cout << "received: " << request << '\n';
+    return request;
+}
+
+void worker(RequestQueue& queue, KVCache& cache) {
+    int fd = queue.consume();
+    
+    std::string request = parse_request(fd);
+    
+    Database db{db_name};
+    RecordRepository repo{db, cache};
+
+    std::string owner = request.substr(0, request.find(' '));
+    std::string rtype = request.substr(request.find(' '), request.size());
+
+    std::cout << "[LOG] worker parsed: " << owner << ' ' << rtype << '\n';
 
     std::string response = "example.com IN 3600 A 192.0.2.1\n";
 
     send(
-        client_fd,
+        fd,
         response.data(),
         response.size(),
         0
     );
+
+    close(fd);
 }
 
-int main() {
+int init_socket() {
     // Remove a stale socket file from a previous execution.
     unlink(SOCKET_PATH);
 
@@ -81,6 +105,41 @@ int main() {
 
     std::cout << "Listening on " << SOCKET_PATH << '\n';
 
+    return server_fd;
+}
+
+std::string read_file(const std::string& data_path) {
+    std::ifstream sql_file(data_path);
+
+    if (!sql_file.is_open()) {
+        throw std::runtime_error{"Could not open file: " + data_path};
+    }
+
+    std::ostringstream ss;
+    ss << sql_file.rdbuf();
+
+    return ss.str();
+}
+
+void init_database() {
+    Database db{db_name};
+
+    const std::string sql = read_file("data/schema.sql");
+    db.execute(sql);
+
+    std::cout << "[LOG] Loaded Database\n";
+}
+
+int main() {
+    int server_fd = init_socket();
+
+    if (!std::filesystem::exists(db_name)) {
+        init_database();
+    }
+
+    KVCache cache{};
+    RequestQueue queue{};
+
     while (true) {
         // Not storing client address or address length
         int client_fd = accept(server_fd, nullptr, nullptr);
@@ -89,10 +148,9 @@ int main() {
             std::cerr << "[LOG] accept() failed\n";
             continue;
         }
-
-        handle_client(client_fd);
-
-        close(client_fd);
+        
+        queue.produce(client_fd);
+        worker(queue, cache);
     }
 
     close(server_fd);

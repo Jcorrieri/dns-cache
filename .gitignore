@@ -68,3 +68,4 @@ Testing/
 .cache/
 temp.*
 external/
+*.db

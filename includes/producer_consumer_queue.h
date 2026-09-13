@@ -12,9 +12,9 @@ class RequestQueue {
 public:
     static constexpr std::size_t s_max_size{10};
 
-    bool produce(int value, int thread_id);
+    bool produce(int value);
 
-    int consume(int thread_id);
+    int consume();
 
 private:
     bool enqueue(int value);

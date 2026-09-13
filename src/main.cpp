@@ -1,45 +1,15 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
-#include <format>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <thread>
-#include <variant>
 
-#include "parse_utils.h"
 #include "database.h"
 #include "producer_consumer_queue.h"
 #include "record_repository.h"
-
-std::string read_file(const std::string& data_path) {
-    std::ifstream sql_file(data_path);
-
-    if (!sql_file.is_open()) {
-        throw std::runtime_error{"Could not open file: " + data_path};
-    }
-
-    std::ostringstream ss;
-    ss << sql_file.rdbuf();
-
-    return ss.str();
-}
-
-void print_entry(const CacheEntry& entry) {
-    for (auto& record : entry.answers) {
-        std::string rtype = RType_to_string(record.rtype);
-
-        std::cout << std::format("{:12} {:^12} {:<12} {:12} ", record.owner, "IN", record.ttl, rtype);
-
-        std::visit([](const auto& value) {
-            std::cout << value;
-        }, record.data);
-
-        std::cout << '\n';
-    }
-}
 
 int main() {
     const std::string db_name{"temp.db"};
@@ -79,11 +49,11 @@ int main() {
 
             Database db{db_name};
 
-            Repository repo{db, cache};
+            RecordRepository repo{db, cache};
 
             CacheEntry entry = repo.get_entry(key);
 
-            print_entry(entry);
+            std::cout << entry;
         });
     }
 

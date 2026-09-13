@@ -1,39 +1,18 @@
 #ifndef JC_BP_CACHE
 #define JC_BP_CACHE
 
-#include <array>
 #include <cstddef>
-#include <mutex>
-#include <optional>
-#include <unordered_map>
 #include <cstdint>
 #include <ctime>
+#include <iosfwd>
+#include <mutex>
+#include <optional>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
-using Cname = std::string;
-
-struct IPv4Address {
-    std::array<std::uint8_t, 4> bytes;
-};
-
-struct IPv6Address {
-    std::array<std::uint16_t, 8> bytes;
-};
-
-struct Naptr {
-    std::uint32_t int1;      // 4B
-    std::uint32_t int2;      // 4B
-    std::string domainName;  // 32B
-    std::string textField1;  // 32B
-    std::string textField2;  // 32B
-    std::string textField3;  // 32B
-};                           // Total: 136B
-
-std::ostream& operator<<(std::ostream& os, const IPv4Address& addr);
-std::ostream& operator<<(std::ostream& os, const IPv6Address& addr);
-std::ostream& operator<<(std::ostream& os, const Naptr& addr);
+#include "ip.h"
 
 using RecordData = std::variant<IPv4Address, IPv6Address, Cname, Naptr>; // Should be 136B + 8B tag = 144B
 
@@ -78,6 +57,8 @@ struct CacheEntry {
     float ttl{0};
     std::uint8_t hits{0};
 };                                   // (24 * 3) + 4 + 1 + 8 = 72 + 5 + 8 = 77 + 8 = 85 + (3) for alignment
+
+std::ostream& operator<<(std::ostream& os, const CacheEntry& entry);
 
 class KVCache {
     private:
