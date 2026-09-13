@@ -1,10 +1,6 @@
 # DNS Cache
 A multithreaded C++20 DNS caching service using Unix domain socket IPC, SQLite-backed storage, and a shared in-memory cache.
 
-This project was inspired by Cloudflare's work on reducing DNS cache memory usage. 
-Rather than reproducing Cloudflare's data structures or caching algorithm directly,
-the current implementation focuses on exploring modern C++, Linux IPC, concurrency, cache design, and database integration.
-
 I was originally inspired by Cloudflare's article on
 [reducing DNS cache memory usage][cloudflare-article] and its memory optimizations, 
 but I eventually fell down a rabbit hole of learning C++ concepts and about unix IPC.
