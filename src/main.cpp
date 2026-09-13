@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <format>
@@ -5,6 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <variant>
 
 #include "parse_utils.h"
@@ -44,23 +46,37 @@ int main() {
     bool should_load_db = !std::filesystem::exists(db_name);
     std::cout << should_load_db << '\n';
 
-    Database db{db_name};
-
     if (should_load_db) {
+        Database db{db_name};
+
         const std::string sql = read_file("data/schema.sql");
         db.execute(sql);
 
         std::cout << "[LOG] Loaded Database\n";
     }
-    
+
     KVCache cache{};
-    Repository repo{db, cache};
 
-    // simulate query
-    CacheKey key{"jimmy2.com", RType::AAAA};
-    CacheEntry entry = repo.get_entry(key);
+    std::vector<std::thread> threads;
+    threads.reserve(2);
 
-    print_entry(entry);
+    std::array<std::string, 2> owners{"jimmy.com", "jimmy2.com"};
+
+    for (std::size_t i{0}; i < 2; i++) {
+        std::string_view owner{owners[i]};
+
+        threads.emplace_back([&db_name, &cache, &owner] {
+            Database db{db_name};
+
+            Repository repo{db, cache};
+
+            CacheKey key{owner.data(), RType::AAAA};
+
+            CacheEntry entry = repo.get_entry(key);
+
+            print_entry(entry);
+        });
+    }
 
     return 0;
 }
