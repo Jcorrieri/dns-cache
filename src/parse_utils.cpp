@@ -45,7 +45,8 @@ IPv4Address string_to_IPv4(std::string_view ip) {
 IPv6Address string_to_IPv6(std::string_view ip) {
     IPv6Address addr{};
 
-    auto colon = ip.find(":", ip.find("::") + 2);
+    auto double_colon = ip.find("::");
+    auto colon = ip.find(":", double_colon + 2);
 
     std::size_t end_zeros_idx{addr.bytes.size() - 1};
     while (colon != std::string::npos) {
@@ -78,11 +79,12 @@ IPv6Address string_to_IPv6(std::string_view ip) {
 
         if (colon != std::string::npos) {
             std::size_t offset{1};
-            if (colon == ip.find("::")){
-                offset++;
+            if (colon == double_colon) {
                 i = end_zeros_idx - 1;
+                offset++;
             }
             ip.remove_prefix(colon + offset);
+            double_colon -= colon + 1;
         }
     }
 
