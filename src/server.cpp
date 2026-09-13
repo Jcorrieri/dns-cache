@@ -1,5 +1,7 @@
 #include "cache.h"
+#include "constants.h"
 #include "database.h"
+#include "parse_utils.h"
 #include "producer_consumer_queue.h"
 #include "record_repository.h"
 #include <filesystem>
@@ -11,14 +13,16 @@
 
 #include <cstring>
 #include <iostream>
+#include <optional>
+#include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <thread>
+#include <vector>
 
-constexpr const char* SOCKET_PATH{"/tmp/dns-cache.sock"};
-const std::string db_name = "dns.db";
-
-std::string parse_request(int fd) {
-    char buffer[1024]; // Allocate buffer to store client request message
+std::string read_request(int fd) {
+    char buffer[constants::socket_buf_size];
 
     const ssize_t n = recv(  // read sizeof(buffer) bytes
         fd,
@@ -27,7 +31,7 @@ std::string parse_request(int fd) {
         0
     );
 
-    if (n == -1) {
+    if (n <= 0) {
         return "";
     }
 
@@ -39,34 +43,68 @@ std::string parse_request(int fd) {
     return request;
 }
 
-void worker(RequestQueue& queue, KVCache& cache) {
-    int fd = queue.consume();
-    
-    std::string request = parse_request(fd);
-    
-    Database db{db_name};
-    RecordRepository repo{db, cache};
+std::optional<CacheKey> parse_request(std::string_view request) {
+    if (!request.empty() && request.back() == '\n') {
+        request.remove_suffix(1);
+    }
 
-    std::string owner = request.substr(0, request.find(' '));
-    std::string rtype = request.substr(request.find(' '), request.size());
+    const std::size_t separator = request.find(' ');
+    if (separator == std::string_view::npos) {
+        return std::nullopt;
+    }
 
-    std::cout << "[LOG] worker parsed: " << owner << ' ' << rtype << '\n';
+    const std::string_view owner = request.substr(0, separator);
+    const std::string_view type_text = request.substr(separator + 1);
 
-    std::string response = "example.com IN 3600 A 192.0.2.1\n";
+    const auto type = string_to_rtype(type_text);
 
-    send(
-        fd,
-        response.data(),
-        response.size(),
-        0
-    );
+    if (owner.empty() || !type) {
+        return std::nullopt;
+    }
 
-    close(fd);
+    return CacheKey{std::string{owner}, *type};
+}
+
+void spawn_worker(RequestQueue& queue, KVCache& cache) {
+    while (true) {
+        int fd = queue.consume();
+
+        const std::string request = read_request(fd);
+
+        const auto key = parse_request(request);
+
+        if (!key) {
+            std::cerr << "[LOG] bad request received\n";
+            close(fd);
+            continue;
+        }
+
+        Database db{constants::db_path};
+        RecordRepository repo{db, cache};
+
+        const CacheEntry entry = repo.get_entry(*key);
+
+        std::ostringstream response;
+        response << entry;
+
+        const std::string response_text = response.str();
+
+        send(
+            fd,
+            response_text.data(),
+            response_text.size(),
+            0
+        );
+
+        close(fd);
+
+        std::cout << "[LOG] worker processed " << request << '\n';
+    }
 }
 
 int init_socket() {
     // Remove a stale socket file from a previous execution.
-    unlink(SOCKET_PATH);
+    unlink(constants::socket_path);
 
     // Init server FD, which listens for connections (linux, stream, auto)
     int server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -81,7 +119,7 @@ int init_socket() {
 
     std::strncpy(
         address.sun_path,
-        SOCKET_PATH,
+        constants::socket_path,
         sizeof(address.sun_path) - 1
     );
 
@@ -96,35 +134,34 @@ int init_socket() {
         throw std::runtime_error{"[LOG] bind() failed"};
     }
 
-    // Accept up to 16 connections before refusal/block
-    if (listen(server_fd, 16) == -1) {
+    if (listen(server_fd, constants::num_connections) == -1) {
         close(server_fd);
-        unlink(SOCKET_PATH);
+        unlink(constants::socket_path);
         throw std::runtime_error{"[LOG] listen() failed"};
     }
 
-    std::cout << "Listening on " << SOCKET_PATH << '\n';
+    std::cout << "Listening on " << constants::socket_path << '\n';
 
     return server_fd;
 }
 
-std::string read_file(const std::string& data_path) {
-    std::ifstream sql_file(data_path);
+void init_database() {
+    Database db{constants::db_path};
+
+    std::ifstream sql_file(constants::schema_path);
 
     if (!sql_file.is_open()) {
-        throw std::runtime_error{"Could not open file: " + data_path};
+        throw std::runtime_error{
+            std::string{"Could not open file: "} + constants::schema_path
+        };
     }
 
     std::ostringstream ss;
+
     ss << sql_file.rdbuf();
 
-    return ss.str();
-}
+    const std::string sql = ss.str();
 
-void init_database() {
-    Database db{db_name};
-
-    const std::string sql = read_file("data/schema.sql");
     db.execute(sql);
 
     std::cout << "[LOG] Loaded Database\n";
@@ -133,12 +170,21 @@ void init_database() {
 int main() {
     int server_fd = init_socket();
 
-    if (!std::filesystem::exists(db_name)) {
+    if (!std::filesystem::exists(constants::db_path)) {
         init_database();
     }
 
     KVCache cache{};
     RequestQueue queue{};
+
+    std::vector<std::thread> workers;
+    workers.reserve(constants::num_workers);
+
+    for (std::size_t i{0}; i < constants::num_workers; i++) {
+        workers.emplace_back([&queue, &cache] {
+            spawn_worker(queue, cache);
+        });
+    }
 
     while (true) {
         // Not storing client address or address length
@@ -150,9 +196,12 @@ int main() {
         }
         
         queue.produce(client_fd);
-        worker(queue, cache);
+    }
+
+    for (auto& w : workers) {
+        w.join();
     }
 
     close(server_fd);
-    unlink(SOCKET_PATH);
+    unlink(constants::socket_path);
 }

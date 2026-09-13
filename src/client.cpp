@@ -1,17 +1,22 @@
+#include "constants.h"
+
+#include <array>
+#include <cstddef>
 #include <cstring>
 #include <stdexcept>
 #include <string>
 #include <iostream>
+#include <string_view>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <thread>
 #include <unistd.h>
+#include <vector>
 
-constexpr const char* SOCKET_PATH = "/tmp/dns-cache.sock";
+int init_socket() {
+    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-int main() {
-    int client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-
-    if (client_fd == -1) {
+    if (fd == -1) {
         throw std::runtime_error{"[LOG] socket() failed"};
     }
 
@@ -20,41 +25,63 @@ int main() {
 
     std::strncpy(
         address.sun_path,
-        SOCKET_PATH,
+        constants::socket_path,
         sizeof(address.sun_path) - 1
     );
 
     int ec = connect(
-        client_fd, 
+        fd, 
         reinterpret_cast<sockaddr*>(&address),
         sizeof(address)
     );
 
     if (ec == -1) {
-        close(client_fd);
+        close(fd);
         throw std::runtime_error{"[LOG] failed to connect to server."};
     }
 
-    const std::string sample_message{"example.com AAAA\n"};
+    return fd;
+}
 
-    send(client_fd, sample_message.data(), sample_message.size(), 0);
+void spawn_client(std::string_view query) {
+    int client_fd = init_socket();
+    
+    send(client_fd, query.data(), query.size(), 0);
 
-    char buffer[1024];
+    char buffer[constants::socket_buf_size];
 
-    ssize_t n = recv(client_fd, buffer, sizeof(buffer), 0);
+    const ssize_t n = recv(client_fd, buffer, sizeof(buffer), 0);
 
-    if (n == -1) {
-        return 0;
+    if (n > 0) {
+        std::cout.write(buffer, n);
     }
 
-    std::string response{
-        buffer,
-        static_cast<std::size_t>(n)
+    close(client_fd);
+}
+
+int main() {
+    std::vector<std::thread> clients;
+    clients.reserve(constants::num_clients);
+
+    std::array<std::string, 7> queries{
+        "example.com A\n", 
+        "jimmy.com A\n", 
+        "jimmy2.com A\n",
+        "example.com AAAA\n", 
+        "jimmy.com AAAA\n", 
+        "jimmy2.com AAAA\n",
+        "example.com CNAME\n", 
     };
 
-    std::cout << "received: " << response << '\n';
+    for (std::size_t i{0}; i < constants::num_clients; i++) {
+        clients.emplace_back([i, &queries] {
+            spawn_client(queries[i % queries.size()]);
+        });
+    }
 
-    close(client_fd);
+    for (auto& c : clients) {
+        c.join();
+    }
 
     return 0;
 }

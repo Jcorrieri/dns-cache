@@ -1,11 +1,30 @@
 #include "parse_utils.h"
 
 #include <cstddef>
+#include <optional>
 #include <string>
+#include <string_view>
 
 #include "cache.h"
 #include "ip.h"
 #include "sqlite3.h"
+
+std::optional<RType> string_to_rtype(std::string_view type) {
+    if (type == "A") {
+        return RType::A;
+    }
+    if (type == "AAAA") {
+        return RType::AAAA;
+    }
+    if (type == "CNAME") {
+        return RType::CNAME;
+    }
+    if (type == "NAPTR") {
+        return RType::NAPTR;
+    }
+
+    return std::nullopt;
+}
 
 std::string column_text_to_string_view(sqlite3_stmt* stmt, int index) {
     const unsigned char* column_text = sqlite3_column_text(stmt, index);

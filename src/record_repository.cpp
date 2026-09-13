@@ -6,29 +6,18 @@
 #include <string_view>
 #include <vector>
 
+#include "constants.h"
 #include "parse_utils.h"
 #include "sqlite3.h"
 
 namespace {
-RType string_to_rtype(std::string_view type) {
-    if (type == "A") {
-        return RType::A;
-    }
-    if (type == "AAAA") {
-        return RType::AAAA;
-    }
-    if (type == "CNAME") {
-        return RType::CNAME;
-    }
-    if (type == "NAPTR") {
-        return RType::NAPTR;
-    }
-
-    throw std::invalid_argument{"Unsupported record type"};
-}
-
 RType column_text_to_rtype(sqlite3_stmt* stmt, int index) {
-    return string_to_rtype(column_text_to_string_view(stmt, index));
+    const auto type = string_to_rtype(column_text_to_string_view(stmt, index));
+    if (!type) {
+        throw std::invalid_argument{"Unsupported record type in database"};
+    }
+
+    return *type;
 }
 
 std::string_view rtype_to_string(RType rtype) {
@@ -68,7 +57,7 @@ CacheEntry RecordRepository::fetch_from_db(const CacheKey& key) const {
         std::vector<Record>{},
         std::vector<Record>{},
         std::vector<Record>{},
-        3600,
+        constants::default_ttl,
         0
     };
 
