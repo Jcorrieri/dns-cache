@@ -5,7 +5,14 @@
 
 // Prefer const string& to pass cstr to API
 Database::Database(const std::string& db_path) {
-    if (sqlite3_open(db_path.c_str(), &m_db) != SQLITE_OK) {
+    int rc = sqlite3_open_v2(
+        db_path.c_str(), 
+        &m_db, 
+        SQLITE_OPEN_READONLY, // Read only for this MVP
+        nullptr
+    );
+
+    if (rc != SQLITE_OK) {
         std::string message{sqlite3_errmsg(m_db)};
 
         sqlite3_close(m_db);

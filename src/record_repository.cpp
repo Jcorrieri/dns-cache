@@ -1,6 +1,7 @@
 #include "record_repository.h"
 
 #include <ctime>
+#include <iostream>
 #include <string_view>
 #include <vector>
 
@@ -65,15 +66,12 @@ CacheEntry Repository::fetch_from_db(const CacheKey& key) const {
 }
 
 CacheEntry Repository::get_entry(const CacheKey& key) const {
-    CacheEntry entry{};
-
-    if (m_cache.contains(key)) {
-        entry = *m_cache.find(key);
-        entry.hits++;
-    } else {
-        entry = fetch_from_db(key);
-        m_cache.emplace(key, entry);
+    if (auto cached = m_cache.find(key)) {
+        return *cached;
     }
+
+    CacheEntry entry = fetch_from_db(key);
+    m_cache.emplace(key, entry);
 
     return entry;
 }

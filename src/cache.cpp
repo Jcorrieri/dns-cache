@@ -1,5 +1,6 @@
 #include "cache.h"
 #include <cstddef>
+#include <mutex>
 #include <optional>
 #include <ostream>
 #include <unordered_map>
@@ -38,24 +39,22 @@ std::ostream& operator<<(std::ostream& os, const Naptr& addr) {
     return os << addr.domainName;
 }
 
+// Need to lock read functions as well to prevent data inconsistency/UB
 void KVCache::emplace(const CacheKey key, const CacheEntry entry) {
+    std::lock_guard lock{m_mutex};
+
     m_cache.emplace(key, entry);
 }
 
-std::optional<CacheEntry> KVCache::find(const CacheKey key) const {
-    if (auto entry = m_cache.find(key); entry != m_cache.end()) { //cache miss
+std::optional<CacheEntry> KVCache::find(const CacheKey key) {
+    std::lock_guard lock{m_mutex};
+
+    if (auto entry = m_cache.find(key); entry != m_cache.end()) { // cache hit
+        entry->second.hits++;
         return entry->second;
-    } else {
-        return std::nullopt;
-    }
-}
+    } 
 
-bool KVCache::contains(const CacheKey key) const {
-    return find(key) != std::nullopt;
-}
-
-std::size_t KVCache::count(const CacheKey key) const {
-    return m_cache.count(key);
+    return std::nullopt;
 }
 
 // See https://en.cppreference.com/cpp/utility/hash

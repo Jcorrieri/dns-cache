@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstddef>
+#include <mutex>
 #include <optional>
 #include <unordered_map>
 #include <cstdint>
@@ -80,16 +81,13 @@ struct CacheEntry {
 
 class KVCache {
     private:
-        std::unordered_map<CacheKey, CacheEntry, KeyHash> m_cache {};
+        std::unordered_map<CacheKey, CacheEntry, KeyHash> m_cache{};
+        mutable std::mutex m_mutex;
 
     public:
         void emplace(const CacheKey key, const CacheEntry entry);
 
-        std::optional<CacheEntry> find(const CacheKey key) const;
-
-        std::size_t count(const CacheKey key) const;
-
-        bool contains(const CacheKey key) const;
+        std::optional<CacheEntry> find(const CacheKey key);
 };
 
 #endif

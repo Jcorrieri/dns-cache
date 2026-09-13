@@ -57,14 +57,9 @@ int main() {
     Repository repo{db, cache};
 
     // simulate query
-    CacheKey key{"example.com", RType::CNAME};
-    repo.get_entry(key);
-
-    key = {"jimmy.com", RType::AAAA};
+    CacheKey key{"jimmy2.com", RType::AAAA};
     CacheEntry entry = repo.get_entry(key);
 
-    key = {"jimmy2.com", RType::AAAA};
-    entry = repo.get_entry(key);
     print_entry(entry);
 
     return 0;
