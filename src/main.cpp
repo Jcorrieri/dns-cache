@@ -60,9 +60,11 @@ int main() {
     CacheKey key{"example.com", RType::CNAME};
     repo.get_entry(key);
 
-    key = {"example.com", RType::AAAA};
+    key = {"jimmy.com", RType::AAAA};
     CacheEntry entry = repo.get_entry(key);
 
+    key = {"jimmy2.com", RType::AAAA};
+    entry = repo.get_entry(key);
     print_entry(entry);
 
     return 0;

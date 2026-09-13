@@ -26,6 +26,8 @@ VALUES
 ("_dmarc.example.com", "A", "192.0.2.100"),
 ("mail.example.com", "A", "192.0.2.25"),
 ("mail.example.com", "AAAA", "2001:db8::25"),
+("jimmy.com", "AAAA", "2001:db8:3f29:25::"),
+("jimmy2.com", "AAAA", "::2001:db8:3f29:25:232a"),
 ("_domainkey.example.com", "CNAME", "dkim.mosaico.example.com"),
 ("enum.example.com", "NAPTR", '100 10 "u" "E2U+sip" "!^.*$!sip:info@example.com!" .'),
 ("cdn.example.com", "CNAME", "svcb.cdn-provider.net."),

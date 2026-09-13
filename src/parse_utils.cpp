@@ -1,6 +1,7 @@
 #include "parse_utils.h"
 
 #include <charconv>
+#include <iostream>
 #include <cstddef>
 #include <stdexcept>
 #include <string>
@@ -61,21 +62,23 @@ IPv6Address string_to_IPv6(std::string_view ip) {
             ? ip
             : ip.substr(0, colon);
 
-        std::uint16_t value{};
-        auto [ptr, ec] = std::from_chars(
-            part.data(),
-            part.data() + part.size(),
-            value,
-            16
-        );
+        if (part.size() > 0) {
+            std::uint16_t value{};
+            auto [ptr, ec] = std::from_chars(
+                part.data(),
+                part.data() + part.size(),
+                value,
+                16
+            );
 
-        if (ec != std::errc{} ||
-            ptr != part.data() + part.size()) {
-            auto error_message = std::format("Invalid hex value: {}", part);
-            throw std::invalid_argument{error_message};
+            if (ec != std::errc{} ||
+                ptr != part.data() + part.size()) {
+                auto error_message = std::format("Invalid hex value: {}", part);
+                throw std::invalid_argument{error_message};
+            }
+
+            addr.bytes[i] = value;
         }
-
-        addr.bytes[i] = value;
 
         if (colon != std::string::npos) {
             std::size_t offset{1};
