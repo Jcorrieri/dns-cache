@@ -1,25 +1,40 @@
-# Simple DNS Cache Experiment
+# DNS Cache
+A multithreaded C++20 DNS caching service using Unix domain socket IPC, SQLite-backed storage, and a shared in-memory cache.
 
-This project is a small C++ experiment inspired by Cloudflare's article on
-[reducing DNS cache memory usage][cloudflare-article].
-It explores DNS record storage, caching, and concurrency without trying to reproduce
-Cloudflare's data structures or caching algorithm exactly.
+This project was inspired by Cloudflare's work on reducing DNS cache memory usage. 
+Rather than reproducing Cloudflare's data structures or caching algorithm directly,
+the current implementation focuses on exploring modern C++, Linux IPC, concurrency, cache design, and database integration.
+
+I was originally inspired by Cloudflare's article on
+[reducing DNS cache memory usage][cloudflare-article] and its memory optimizations, 
+but I eventually fell down a rabbit hole of learning C++ concepts and about unix IPC.
 
 ## Current state
 
-The repository currently contains a working local client/server prototype:
+The repository contains a working local client/server MVP:
 
-- The server listens on the Unix domain socket `/tmp/dns-cache.sock`.
-- Eight worker threads process requests through a bounded producer/consumer queue.
-- Records are read from a SQLite database and stored in a shared, in-memory key/value cache.
-- The database is initialized from `data/schema.sql` the first time the server runs if
-  `dns.db` does not already exist.
-- Queries use the text format `<owner> <type>`, such as `example.com A`.
-- `A`, `AAAA`, `CNAME`, and `NAPTR` records are supported.
-- The sample client starts ten threads and sends a fixed set of example queries.
+- The server listens on the Unix domain socket /tmp/dns-cache.sock.
+- A fixed pool of worker threads processes accepted connections through a bounded producer/consumer queue.
+- Cache misses are resolved against a SQLite-backed repository and inserted into a shared, thread-safe in-memory key/value cache.
+- Worker threads reuse their repository, SQLite connection, and prepared statement state across requests.
+- The database is initialized from data/schema.sql the first time the server runs if dns.db does not already exist.
+- Queries use the text format <owner> <type>, such as example.com A.
+- A, AAAA, CNAME, and NAPTR records are supported.
+- The included sample client creates multiple threads and issues concurrent requests to the server.
 
-This is an experimental cache rather than a DNS resolver: it only returns records present in
-the local database. The cache is currently unbounded and has no TTL expiration or eviction.
+## Limitations
+
+This is an experimental cache rather than a complete DNS resolver.
+
+The current implementation:
+
+- Only returns records available in the local SQLite database.
+- Does not recursively resolve CNAME chains.
+- Does not perform external DNS queries.
+- Does not implement TTL expiration or cache eviction.
+- Uses an intentionally unbounded in-memory cache.
+- Uses a simple text-based request/response protocol intended for local experimentation rather than production use.
+
 Planned ideas and remaining work are tracked in the
 [Project Scope issue](https://github.com/Jcorrieri/dns-cache/issues/1).
 
