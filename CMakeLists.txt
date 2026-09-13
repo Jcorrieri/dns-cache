@@ -9,6 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(app
     src/main.cpp
     src/cache.cpp
+    src/producer_consumer_queue.cpp
     src/database.cpp
     src/record_repository.cpp
     src/parse_utils.cpp

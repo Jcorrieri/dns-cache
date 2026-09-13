@@ -1,7 +1,6 @@
 #include "record_repository.h"
 
 #include <ctime>
-#include <iostream>
 #include <string_view>
 #include <vector>
 

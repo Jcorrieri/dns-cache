@@ -11,6 +11,7 @@
 
 #include "parse_utils.h"
 #include "database.h"
+#include "producer_consumer_queue.h"
 #include "record_repository.h"
 
 std::string read_file(const std::string& data_path) {
@@ -30,7 +31,7 @@ void print_entry(const CacheEntry& entry) {
     for (auto& record : entry.answers) {
         std::string rtype = RType_to_string(record.rtype);
 
-        std::cout << std::format("{:8} {:^8} {:<8} {:8} ", record.owner, "IN", record.ttl, rtype);
+        std::cout << std::format("{:12} {:^12} {:<12} {:12} ", record.owner, "IN", record.ttl, rtype);
 
         std::visit([](const auto& value) {
             std::cout << value;
@@ -57,25 +58,41 @@ int main() {
 
     KVCache cache{};
 
-    std::vector<std::thread> threads;
-    threads.reserve(2);
+    std::vector<std::thread> pthreads;
+    std::vector<std::thread> cthreads;
 
-    std::array<std::string, 2> owners{"jimmy.com", "jimmy2.com"};
+    pthreads.reserve(5);
+    cthreads.reserve(5);
 
-    for (std::size_t i{0}; i < 2; i++) {
-        std::string_view owner{owners[i]};
+    RequestQueue queue{};
 
-        threads.emplace_back([&db_name, &cache, &owner] {
+    std::array<std::string, 3> owners{"jimmy.com", "jimmy2.com", "example.com"};
+
+    for (std::size_t i{0}; i < 3; i++) {
+        pthreads.emplace_back([i, &queue] {
+            queue.produce(i, i + 1);
+        });
+        cthreads.emplace_back([i, &queue, &owners, &db_name, &cache] {
+            int index = queue.consume(i);
+
+            CacheKey key{owners[index], RType::AAAA};
+
             Database db{db_name};
 
             Repository repo{db, cache};
-
-            CacheKey key{owner.data(), RType::AAAA};
 
             CacheEntry entry = repo.get_entry(key);
 
             print_entry(entry);
         });
+    }
+
+    for (auto& t : pthreads) {
+        t.join();
+    }
+
+    for (auto& t : cthreads) {
+        t.join();
     }
 
     return 0;
