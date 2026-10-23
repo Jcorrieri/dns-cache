@@ -15,6 +15,8 @@ std::optional<RType> string_to_rtype(std::string_view type);
 
 std::string_view rtype_to_string(RType);
 
+RType column_text_to_rtype(sqlite3_stmt* stmt, int index);
+
 RecordData column_text_to_record_data(sqlite3_stmt* stmt, int index, RType rtype);
 
 #endif

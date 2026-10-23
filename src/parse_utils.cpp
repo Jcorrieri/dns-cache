@@ -53,6 +53,15 @@ std::string column_text_to_string_view(sqlite3_stmt* stmt, int index) {
     return value;
 }
 
+RType column_text_to_rtype(sqlite3_stmt* stmt, int index) {
+    const auto type = string_to_rtype(column_text_to_string_view(stmt, index));
+    if (!type) {
+        throw std::invalid_argument{"Unsupported record type in database"};
+    }
+
+    return *type;
+}
+
 RecordData column_text_to_record_data(sqlite3_stmt* stmt, int index, RType rtype) {
     std::string data = column_text_to_string_view(stmt, index);
 

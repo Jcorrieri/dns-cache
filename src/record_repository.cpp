@@ -1,7 +1,6 @@
 #include "record_repository.h"
 
 #include <ctime>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -9,17 +8,6 @@
 #include "constants.h"
 #include "parse_utils.h"
 #include "sqlite3.h"
-
-namespace {
-RType column_text_to_rtype(sqlite3_stmt* stmt, int index) {
-    const auto type = string_to_rtype(column_text_to_string_view(stmt, index));
-    if (!type) {
-        throw std::invalid_argument{"Unsupported record type in database"};
-    }
-
-    return *type;
-}
-}
 
 RecordRepository::RecordRepository(Database& db, KVCache& cache)
 :
