@@ -1,26 +1,11 @@
 #include "cache.h"
+#include "parse_utils.h"
 
 #include <format>
 #include <mutex>
 #include <optional>
 #include <ostream>
-#include <string_view>
 #include <unordered_map>
-
-std::string_view rtype_to_string(RType rtype) {
-    switch (rtype) {
-        case RType::A:
-            return "A";
-        case RType::AAAA:
-            return "AAAA";
-        case RType::CNAME:
-            return "CNAME";
-        case RType::NAPTR:
-            return "NAPTR";
-    }
-
-    return "Not Defined";
-}
 
 std::ostream& operator<<(std::ostream& os, const CacheEntry& entry) {
     for (const auto& record : entry.answers) {

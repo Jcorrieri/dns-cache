@@ -6,7 +6,6 @@
 #include <string>
 #include <string_view>
 
-#include "cache.h"
 #include "ip.h"
 #include "sqlite3.h"
 
