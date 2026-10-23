@@ -43,9 +43,7 @@ IPv4Address string_to_IPv4(std::string_view ip) {
 
         if (dot != std::string_view::npos) {
             ip.remove_prefix(dot + 1);
-        } else if (i < addr.bytes.size() - 1) {
-            throw std::invalid_argument{"Invalid IPv4 address"};
-        }
+        } 
     }
 
     return addr;

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -24,6 +25,21 @@ std::optional<RType> string_to_rtype(std::string_view type) {
     }
 
     return std::nullopt;
+}
+
+std::string_view rtype_to_string(RType rtype) {
+    switch (rtype) {
+        case RType::A:
+            return "A";
+        case RType::AAAA:
+            return "AAAA";
+        case RType::CNAME:
+            return "CNAME";
+        case RType::NAPTR:
+            return "NAPTR";
+    }
+
+    throw std::invalid_argument{"Unsupported record type"};
 }
 
 std::string column_text_to_string_view(sqlite3_stmt* stmt, int index) {

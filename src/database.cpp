@@ -61,7 +61,7 @@ void Database::execute(const std::string& sql) const {
     );
 
     if (rc != SQLITE_OK) {
-        std::string error_message = std::format("Error executing sql: {}", sqlite3_errmsg(m_db));
+        std::string error_message = std::format("Error executing sql: {}\n", sqlite3_errmsg(m_db));
         throw std::runtime_error{error_message};
     }
 }

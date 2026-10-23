@@ -4,7 +4,9 @@
 #include "parse_utils.h"
 #include "producer_consumer_queue.h"
 #include "record_repository.h"
+#include <cstdio>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -98,7 +100,7 @@ void spawn_worker(RequestQueue& queue, KVCache& cache) {
 
         close(fd);
 
-        std::cout << "[LOG] worker processed " << request << '\n';
+        std::cout << std::format("[LOG] worker processed {}\n", request);
     }
 }
 

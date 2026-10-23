@@ -19,21 +19,6 @@ RType column_text_to_rtype(sqlite3_stmt* stmt, int index) {
 
     return *type;
 }
-
-std::string_view rtype_to_string(RType rtype) {
-    switch (rtype) {
-        case RType::A:
-            return "A";
-        case RType::AAAA:
-            return "AAAA";
-        case RType::CNAME:
-            return "CNAME";
-        case RType::NAPTR:
-            return "NAPTR";
-    }
-
-    throw std::invalid_argument{"Unsupported record type"};
-}
 }
 
 RecordRepository::RecordRepository(Database& db, KVCache& cache)
