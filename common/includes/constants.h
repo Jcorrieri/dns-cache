@@ -4,7 +4,7 @@
 #include <cstddef>
 
 namespace constants {
-inline constexpr char db_path[]{"dns.db"};
+inline constexpr char db_path[]{"data/dns.db"};
 inline constexpr char schema_path[]{"data/schema.sql"};
 inline constexpr char socket_path[]{"/tmp/dns-cache.sock"};
 

@@ -30,10 +30,9 @@ external/sqlite/sqlite3ext.h
 
 ## Build and run
 
-Run all commands from the repository root. The server uses repo-relative paths for
-`data/schema.sql` and `dns.db`.
+Run all commands from the repository root.
 
-Configure and build the server with CMake:
+Configure and build both the client and the server with CMake:
 
 ```sh
 cmake -S . -B build
@@ -43,22 +42,16 @@ cmake --build build
 Start the server:
 
 ```sh
-./build/app
+./build/Server
 ```
 
-In another terminal, compile the sample client with `g++` or an equivalent C++ compiler:
+In another terminal, start the client:
 
 ```sh
-g++ -std=c++20 -pthread src/client.cpp -Iincludes -o client
+./build/Client
 ```
 
-Then run it while the server is listening:
-
-```sh
-./client
-```
-
-On its first run, the server creates `dns.db` and loads the sample records from
+On its first run, the server creates `data/dns.db` and loads the sample records from
 `data/schema.sql`. To use different records, edit the schema before the database is created,
 or update the `records` table with a SQLite-compatible tool.
 
