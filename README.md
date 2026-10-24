@@ -50,13 +50,13 @@ cmake --build build
 Start the server:
 
 ```sh
-./build/Server
+./build/server
 ```
 
 In another terminal, start the client:
 
 ```sh
-./build/Client
+./build/client
 ```
 
 On its first run, the server creates `data/dns.db` and loads the sample records from
