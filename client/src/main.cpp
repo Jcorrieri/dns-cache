@@ -1,9 +1,6 @@
-#include "constants.h"
-
 #include <array>
 #include <cstddef>
 #include <cstring>
-#include <stdexcept>
 #include <string>
 #include <iostream>
 #include <string_view>
@@ -12,43 +9,25 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+#include "common.h"
 
-int init_socket() {
-    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
-
-    if (fd == -1) {
-        throw std::runtime_error{"[LOG] socket() failed"};
-    }
-
-    sockaddr_un address{};
-    address.sun_family = AF_UNIX;
-
-    std::strncpy(
-        address.sun_path,
-        constants::socket_path,
-        sizeof(address.sun_path) - 1
-    );
+void spawn_client(std::string_view query) {
+    SocketInfo sock_info = init_socket();
+    
+    int client_fd = sock_info.fd;
+    sockaddr_un address = sock_info.address;
 
     int ec = connect(
-        fd, 
-        reinterpret_cast<sockaddr*>(&address),
+        client_fd, 
+        reinterpret_cast<sockaddr*>(&address), 
         sizeof(address)
     );
 
-    if (ec == -1) {
-        close(fd);
-        throw std::runtime_error{"[LOG] failed to connect to server."};
-    }
+    check_connect_or_bind(client_fd, ec); 
 
-    return fd;
-}
-
-void spawn_client(std::string_view query) {
-    int client_fd = init_socket();
-    
     send(client_fd, query.data(), query.size(), 0);
 
-    char buffer[constants::socket_buf_size];
+    char buffer[dns_cache::constants::socket_buf_size];
 
     const ssize_t n = recv(client_fd, buffer, sizeof(buffer), 0);
 
@@ -61,7 +40,7 @@ void spawn_client(std::string_view query) {
 
 int main() {
     std::vector<std::thread> clients;
-    clients.reserve(constants::num_clients);
+    clients.reserve(dns_cache::constants::num_clients);
 
     std::array<std::string, 7> queries{
         "example.com A\n", 
@@ -73,7 +52,7 @@ int main() {
         "example.com CNAME\n", 
     };
 
-    for (std::size_t i{0}; i < constants::num_clients; i++) {
+    for (std::size_t i{0}; i < dns_cache::constants::num_clients; i++) {
         clients.emplace_back([i, &queries] {
             spawn_client(queries[i % queries.size()]);
         });

@@ -7,12 +7,12 @@
 #include <mutex>
 #include <optional>
 
-#include "constants.h"
+#include "common.h"
 
 // Enqueue at the back, dequeue at the front.
 class RequestQueue {
 public:
-    static constexpr std::size_t s_max_size{constants::queue_capacity};
+    static constexpr std::size_t s_max_size{dns_cache::constants::queue_capacity};
 
     bool produce(int value);
 

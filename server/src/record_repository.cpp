@@ -5,7 +5,7 @@
 #include <string_view>
 #include <vector>
 
-#include "constants.h"
+#include "common.h"
 #include "parse_utils.h"
 #include "sqlite3.h"
 
@@ -30,7 +30,7 @@ CacheEntry RecordRepository::fetch_from_db(const CacheKey& key) const {
         std::vector<Record>{},
         std::vector<Record>{},
         std::vector<Record>{},
-        constants::default_ttl,
+        dns_cache::constants::default_ttl,
         0
     };
 

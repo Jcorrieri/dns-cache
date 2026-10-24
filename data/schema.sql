@@ -12,7 +12,6 @@ VALUES
 ("example.com", "A", "192.0.2.10"),
 ("example.com", "AAAA", "2001:db8::10"),
 ("example.com", "A", "192.0.2.11"),
-("example.com", "CNAME", "svcb-replacement.example.com"),
 ("example.com", "NAPTR", '10 100 "s" "SIP+D2U" "" _sip._udp.example.com'),
 ("www.example.com", "CNAME", "example.com"),
 ("simplesite.com", "A", "164.38.55.1"),
