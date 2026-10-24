@@ -26,6 +26,6 @@ struct SocketInfo {
 
 SocketInfo init_socket(void);
 
-void check_connect_or_bind(int fd, int ec);
+void check_bind_or_connect(int fd, int ec);
 
 #endif

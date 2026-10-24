@@ -23,7 +23,7 @@ void spawn_client(std::string_view query) {
         sizeof(address)
     );
 
-    check_connect_or_bind(client_fd, ec); 
+    check_bind_or_connect(client_fd, ec); 
 
     send(client_fd, query.data(), query.size(), 0);
 

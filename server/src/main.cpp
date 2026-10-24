@@ -34,7 +34,7 @@ int bind_socket() {
         sizeof(address)
     );
 
-    check_connect_or_bind(server_fd, ec);
+    check_bind_or_connect(server_fd, ec);
 
     if (listen(server_fd, dns_cache::constants::num_connections) == -1) {
         close(server_fd);

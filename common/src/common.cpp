@@ -25,7 +25,7 @@ SocketInfo init_socket() {
     return {fd, address};
 }
 
-void check_connect_or_bind(int fd, int ec) {
+void check_bind_or_connect(int fd, int ec) {
     if (ec == -1) {
         close(fd);
         throw std::runtime_error{"[LOG] bind() failed"};
