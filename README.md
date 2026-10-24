@@ -18,7 +18,15 @@ Planned ideas and remaining work are tracked in the
 ## SQLite setup
 
 The CMake target compiles SQLite directly from `external/sqlite/sqlite3.c` and expects its
-headers in the same directory. Download the current SQLite amalgamation archive from the
+headers in the same directory. 
+
+### Script
+
+Run `./scripts/sqlite_download` to automatically set up the sqlite3 dependencies.
+
+### Manual download
+
+Download the current SQLite amalgamation archive from the
 [official SQLite download page](https://www.sqlite.org/download.html), then extract at least
 these files into `external/sqlite/`:
 

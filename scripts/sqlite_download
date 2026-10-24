@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+#
+# Downloads the SQLite amalgamation into ./external/sqlite3
+# Usage (from the project root): ./scripts/download-sqlite.sh
+
+set -euo pipefail
+
+SQLITE_URL="https://www.sqlite.org/2026/sqlite-amalgamation-3540100.zip"
+TARGET_DIR="external/sqlite"
+
+# --- Verify we are being run from the project root -------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+if [[ "$(pwd -P)" != "$PROJECT_ROOT" ]]; then
+    echo "Error: this script must be run from the project root." >&2
+    echo "  Current directory: $(pwd -P)" >&2
+    echo "  Expected:          $PROJECT_ROOT" >&2
+    echo "  Run it as: ./scripts/$(basename "${BASH_SOURCE[0]}")" >&2
+    exit 1
+fi
+
+# --- Check required tools ---------------------------------------------------
+for cmd in unzip; do
+    command -v "$cmd" >/dev/null 2>&1 || { echo "Error: '$cmd' is not installed." >&2; exit 1; }
+done
+
+if command -v curl >/dev/null 2>&1; then
+    download() { curl -fL --progress-bar -o "$2" "$1"; }
+elif command -v wget >/dev/null 2>&1; then
+    download() { wget -q --show-progress -O "$2" "$1"; }
+else
+    echo "Error: neither 'curl' nor 'wget' is installed." >&2
+    exit 1
+fi
+
+# --- Create target directory if it doesn't exist ----------------------------
+if [[ ! -d "$TARGET_DIR" ]]; then
+    echo "Creating directory: $TARGET_DIR"
+    mkdir -p "$TARGET_DIR"
+else
+    echo "Directory already exists: $TARGET_DIR"
+fi
+
+# --- Download and extract ---------------------------------------------------
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+ZIP_FILE="$TMP_DIR/sqlite-amalgamation.zip"
+
+echo "Downloading $SQLITE_URL"
+download "$SQLITE_URL" "$ZIP_FILE"
+
+echo "Extracting to $TARGET_DIR"
+# -j flattens the archive's top-level folder; -o overwrites existing files
+unzip -q -o -j "$ZIP_FILE" -d "$TARGET_DIR"
+
+echo "Done. Contents of $TARGET_DIR:"
+ls -1 "$TARGET_DIR"
