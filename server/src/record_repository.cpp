@@ -1,10 +1,13 @@
 #include "record_repository.h"
 
 #include <ctime>
+#include <iostream>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "cache.h"
 #include "common.h"
 #include "parse_utils.h"
 #include "sqlite3.h"
@@ -66,12 +69,17 @@ CacheEntry RecordRepository::fetch_from_db(const CacheKey& key) const {
     return entry;
 }
 
-CacheEntry RecordRepository::get_entry(const CacheKey& key) const {
+std::optional<CacheEntry> RecordRepository::get_entry(const CacheKey& key) const {
     if (auto cached = m_cache.find(key)) {
         return *cached;
     }
 
     CacheEntry entry = fetch_from_db(key);
+
+    if (entry.answers.empty()) { // TODO: Make dedicated DB type agnostic to cache entry shape
+        return std::nullopt;
+    }
+
     m_cache.emplace(key, entry);
 
     return entry;

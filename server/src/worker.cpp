@@ -3,6 +3,7 @@
 #include "producer_consumer_queue.h"
 #include "record_repository.h"
 #include "parse_utils.h"
+#include <cstdio>
 #include <format>
 #include <iostream>
 #include <sstream>
@@ -71,10 +72,15 @@ void spawn_worker(RequestQueue& queue, KVCache& cache) {
             continue;
         }
 
-        const CacheEntry entry = repo.get_entry(*key);
-
+        const auto entry = repo.get_entry(*key);
+        
         std::ostringstream response;
-        response << entry;
+
+        if (!entry) {
+            response << "Entry not in database, resolving upstream...";
+        }
+
+        response << *entry;
 
         const std::string response_text = response.str();
 

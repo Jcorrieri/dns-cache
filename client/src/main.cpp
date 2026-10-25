@@ -1,8 +1,9 @@
 #include <array>
 #include <cstddef>
+#include <cstdio>
 #include <cstring>
-#include <string>
 #include <iostream>
+#include <string>
 #include <string_view>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -11,7 +12,7 @@
 #include <vector>
 #include "common.h"
 
-void spawn_client(std::string_view query) {
+void spawn_client(int id, std::string_view query) {
     SocketInfo sock_info = init_socket();
     
     int client_fd = sock_info.fd;
@@ -31,8 +32,11 @@ void spawn_client(std::string_view query) {
 
     const ssize_t n = recv(client_fd, buffer, sizeof(buffer), 0);
 
+    // Silent drop when n == 0 (missing failed returns)
     if (n > 0) {
-        std::cout.write(buffer, n);
+        std::printf("Client worker %d received:\n%s\n", id, buffer);
+    } else {
+        std::fprintf(stderr, "[Error] Client worker %d received 0 bytes.\n", id);
     }
 
     close(client_fd);
@@ -54,7 +58,7 @@ int main() {
 
     for (std::size_t i{0}; i < dns_cache::constants::num_clients; i++) {
         clients.emplace_back([i, &queries] {
-            spawn_client(queries[i % queries.size()]);
+            spawn_client(i + 1, queries[i % queries.size()]);
         });
     }
 

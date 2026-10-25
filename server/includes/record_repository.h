@@ -3,6 +3,7 @@
 
 #include "cache.h"
 #include "database.h"
+#include <optional>
 
 struct sqlite3_stmt;
 
@@ -12,7 +13,7 @@ public:
 
     ~RecordRepository();
 
-    CacheEntry get_entry(const CacheKey& key) const;
+    std::optional<CacheEntry> get_entry(const CacheKey& key) const;
 
 private:
     Database& m_db;

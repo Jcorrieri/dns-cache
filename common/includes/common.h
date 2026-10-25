@@ -11,7 +11,7 @@ namespace dns_cache {
         inline constexpr char socket_path[]{"/tmp/dns-cache.sock"};
 
         inline constexpr std::size_t num_workers{8};
-        inline constexpr std::size_t num_clients{10};
+        inline constexpr std::size_t num_clients{7};
         inline constexpr std::size_t socket_buf_size{1024};
         inline constexpr int num_connections{16};
         inline constexpr std::size_t queue_capacity{10};
