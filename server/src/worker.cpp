@@ -55,7 +55,7 @@ namespace {
     }
 }
 
-void spawn_worker(RequestQueue& queue, KVCache& cache) {
+void spawn_worker(int id, RequestQueue& queue, KVCache& cache) {
     Database db{dns_cache::constants::db_path};
     RecordRepository repo{db, cache};
 
@@ -67,7 +67,7 @@ void spawn_worker(RequestQueue& queue, KVCache& cache) {
         const auto key = parse_request(request);
 
         if (!key) {
-            std::cerr << "[LOG] bad request received\n";
+            std::cerr << std::format("[LOG] worker {} received a bad request\n", id);
             close(fd);
             continue;
         }
@@ -77,7 +77,7 @@ void spawn_worker(RequestQueue& queue, KVCache& cache) {
         std::ostringstream response;
 
         if (!entry) {
-            response << "Entry not in database, resolving upstream...";
+            response << "Entry not in database, resolving upstream...\n";
         }
 
         response << *entry;
@@ -93,7 +93,7 @@ void spawn_worker(RequestQueue& queue, KVCache& cache) {
 
         close(fd);
 
-        std::cout << std::format("[LOG] worker processed {}\n", request);
+        std::cout << std::format("[LOG] worker {} processed {}\n", id, request);
     }
 }
 

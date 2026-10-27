@@ -83,8 +83,8 @@ int main() {
     workers.reserve(dns_cache::constants::num_workers);
 
     for (std::size_t i{0}; i < dns_cache::constants::num_workers; i++) {
-        workers.emplace_back([&queue, &cache] {
-            spawn_worker(queue, cache);
+        workers.emplace_back([i, &queue, &cache] {
+            spawn_worker(i + 1, queue, cache);
         });
     }
 

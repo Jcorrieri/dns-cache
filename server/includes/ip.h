@@ -2,6 +2,7 @@
 #define JC_BP_IP
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <iosfwd>
 #include <string>
@@ -15,6 +16,8 @@ struct IPv4Address {
 
 struct IPv6Address {
     std::array<std::uint16_t, 8> bytes;
+    std::size_t start_zeros_idx;
+    std::size_t end_zeros_idx;
 };
 
 struct Naptr {
