@@ -67,6 +67,7 @@ IPv6Address string_to_IPv6(std::string_view ip) {
         end_zeros_idx--;
     }
     addr.end_zeros_idx = end_zeros_idx;
+    addr.start_zeros_idx = num_parts;
 
     const bool zero_prefixed = ip.size() > 0 && ip[0] == ':';
 

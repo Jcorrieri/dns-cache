@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <sys/socket.h>
@@ -32,9 +31,8 @@ void spawn_client(int id, std::string_view query) {
 
     const ssize_t n = recv(client_fd, buffer, sizeof(buffer), 0);
 
-    // Silent drop when n == 0 (missing failed returns)
     if (n > 0) {
-        std::printf("Client worker %d received:\n%s\n", id, buffer);
+        std::printf("[LOG] Client worker %d received:\n%s\n", id, buffer);
     } else {
         std::fprintf(stderr, "[Error] Client worker %d received 0 bytes.\n", id);
     }
@@ -43,20 +41,15 @@ void spawn_client(int id, std::string_view query) {
 }
 
 int main() {
+    constexpr std::size_t num_clients = dns_cache::constants::num_clients;
+    const std::string_view query_file_path{dns_cache::constants::query_file_path};
+
     std::vector<std::thread> clients;
-    clients.reserve(dns_cache::constants::num_clients);
+    clients.reserve(num_clients);
 
-    std::array<std::string, 7> queries{
-        "example.com A\n", 
-        "jimmy.com A\n", 
-        "jimmy2.com A\n",
-        "example.com AAAA\n", 
-        "jimmy.com AAAA\n", 
-        "jimmy2.com AAAA\n",
-        "www.example.com A\n", 
-    };
+    std::vector<std::string> queries = read_query_file(query_file_path, num_clients);
 
-    for (std::size_t i{0}; i < dns_cache::constants::num_clients; i++) {
+    for (std::size_t i{0}; i < num_clients; i++) {
         clients.emplace_back([i, &queries] {
             spawn_client(i + 1, queries[i % queries.size()]);
         });

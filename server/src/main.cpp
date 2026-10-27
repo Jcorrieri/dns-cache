@@ -80,9 +80,9 @@ int main() {
     RequestQueue queue{};
 
     std::vector<std::thread> workers;
-    workers.reserve(dns_cache::constants::num_workers);
+    workers.reserve(dns_cache::constants::num_server_workers);
 
-    for (std::size_t i{0}; i < dns_cache::constants::num_workers; i++) {
+    for (std::size_t i{0}; i < dns_cache::constants::num_server_workers; i++) {
         workers.emplace_back([i, &queue, &cache] {
             spawn_worker(i + 1, queue, cache);
         });
