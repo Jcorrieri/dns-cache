@@ -1,7 +1,6 @@
 #include "record_repository.h"
 
 #include <ctime>
-#include <iostream>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -17,9 +16,21 @@ RecordRepository::RecordRepository(Database& db, KVCache& cache)
     m_db{db}, m_cache{cache}
 {
     m_stmt = m_db.prepare(R"(
-        SELECT owner, type, data, ttl
-        FROM records
-        WHERE owner = ? AND type = ?
+        WITH RECURSIVE resolve AS (
+            SELECT owner, type, data, ttl
+            FROM records
+            WHERE owner = :owner
+            AND (type = :rtype OR type = 'CNAME')
+
+            UNION ALL
+
+            SELECT rc.owner, rc.type, rc.data, rc.ttl
+            FROM records rc
+            JOIN resolve rv
+                ON rc.owner = rv.data 
+                AND (rc.type = :rtype OR rc.type = 'CNAME')
+        )
+        SELECT * FROM resolve;
     )");
 }
 
@@ -39,16 +50,17 @@ CacheEntry RecordRepository::fetch_from_db(const CacheKey& key) const {
 
     sqlite3_bind_text(
         m_stmt,
-        1, // 1-indexed parameters
+        sqlite3_bind_parameter_index(m_stmt, ":owner"),
         key.qname.data(),
         key.qname.size(),
         SQLITE_TRANSIENT
     );
 
     const std::string_view rtype_str = rtype_to_string(key.qtype);
+
     sqlite3_bind_text(
         m_stmt,
-        2,
+        sqlite3_bind_parameter_index(m_stmt, ":rtype"),
         rtype_str.data(),
         rtype_str.size(),
         SQLITE_TRANSIENT

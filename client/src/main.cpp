@@ -53,7 +53,7 @@ int main() {
         "example.com AAAA\n", 
         "jimmy.com AAAA\n", 
         "jimmy2.com AAAA\n",
-        "example.com CNAME\n", 
+        "www.example.com A\n", 
     };
 
     for (std::size_t i{0}; i < dns_cache::constants::num_clients; i++) {
