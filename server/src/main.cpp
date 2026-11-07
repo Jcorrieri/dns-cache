@@ -37,10 +37,10 @@ int bind_socket() {
     if (listen(server_fd, dns_cache::constants::num_connections) == -1) {
         close(server_fd);
         unlink(dns_cache::constants::socket_path);
-        throw std::runtime_error{"[LOG] listen() failed"};
+        throw std::runtime_error{"[ERROR] listen() failed"};
     }
 
-    std::cout << "Listening on " << dns_cache::constants::socket_path << '\n';
+    std::cout << "[INFO] Listening on " << dns_cache::constants::socket_path << '\n';
 
     return server_fd;
 }
@@ -64,7 +64,7 @@ void init_database() {
 
     db.execute(sql);
 
-    std::cout << "[LOG] Loaded Database\n";
+    std::cout << "[INFO] Loaded Database\n";
 }
 
 int main() {
@@ -88,16 +88,24 @@ int main() {
         });
     }
 
-    while (true) {
+    std::size_t accepted_requests{0};
+
+    while (accepted_requests < dns_cache::constants::num_requests) {
         // Not storing client address or address length
         int client_fd = accept(server_fd, nullptr, nullptr);
 
         if (client_fd == -1) {
-            std::cerr << "[LOG] accept() failed\n";
+            std::cerr << "[ERROR] accept() failed\n";
             continue;
         }       
 
         queue.produce(client_fd);
+
+        accepted_requests++;
+    }
+
+    for (std::size_t i{0}; i < num_workers; i++) {
+        queue.produce(dns_cache::constants::SERVER_STOP_SENTINAL);
     }
 
     for (auto& w : workers) {
@@ -106,4 +114,6 @@ int main() {
 
     close(server_fd);
     unlink(dns_cache::constants::socket_path);
+
+    std::cout << "[INFO] Server finished.\n";
 }

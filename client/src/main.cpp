@@ -42,10 +42,13 @@ void spawn_client(int id, RequestQueue<std::string_view>& queue) {
         const ssize_t n = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
 
         if (n > 0) {
-            buffer[n] = '\0';
-            std::cout << std::format("[LOG] Client worker {} received:\n{}\n", id, buffer);
+            buffer[n] = '\0'; // Need this to avoid leaking previous buffer memory from stack
+
+            if (dns_cache::constants::worker_log_info) {
+                std::cout << std::format("[INFO] Client worker {} received:\n{}\n", id, buffer);
+            }
         } else {
-            std::cout << std::format("[Error] Client worker {} received 0 bytes.\n", id);
+            std::cout << std::format("[ERROR] Client worker {} received 0 bytes.\n", id);
         }
 
         close(client_fd);
@@ -92,6 +95,8 @@ int main() {
     for (auto& c : clients) {
         c.join();
     }
+
+    std::cout << "[INFO] Client finished.\n";
 
     return 0;
 }

@@ -23,6 +23,8 @@ namespace dns_cache {
         inline constexpr int num_connections{16};
 
         inline constexpr std::string_view CLIENT_STOP_SENTINAL{};
+        inline constexpr int SERVER_STOP_SENTINAL{-904};
+        inline constexpr bool worker_log_info{false};
     }
 }
 

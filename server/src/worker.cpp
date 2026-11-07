@@ -62,12 +62,16 @@ void spawn_worker(int id, RequestQueue<int>& queue, Cache& cache) {
     while (true) {
         int fd = queue.consume();
 
+        if (fd == dns_cache::constants::SERVER_STOP_SENTINAL) {
+            return;
+        }
+
         const std::string request = read_request(fd);
 
         const auto key = parse_request(request);
 
         if (!key) {
-            std::cerr << std::format("[LOG] worker {} received a bad request\n", id);
+            std::cerr << std::format("[ERROR] worker {} received a bad request\n", id);
             close(fd);
             continue;
         }
@@ -93,7 +97,9 @@ void spawn_worker(int id, RequestQueue<int>& queue, Cache& cache) {
 
         close(fd);
 
-        std::cout << std::format("[LOG] worker {} processed {}\n", id, request);
+        if (dns_cache::constants::worker_log_info) {
+            std::cout << std::format("[INFO] worker {} processed {}\n", id, request);
+        }
     }
 }
 
