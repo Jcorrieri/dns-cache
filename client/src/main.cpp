@@ -10,34 +10,39 @@
 #include <unistd.h>
 #include <vector>
 #include "common.h"
+#include "producer_consumer_queue.h"
 
-void spawn_client(int id, std::string_view query) {
-    SocketInfo sock_info = init_socket();
-    
-    int client_fd = sock_info.fd;
-    sockaddr_un address = sock_info.address;
+void spawn_client(int id, RequestQueue<std::string_view>& queue) {
+    while (true) {
+        std::string_view query = queue.consume();
 
-    int ec = connect(
-        client_fd, 
-        reinterpret_cast<sockaddr*>(&address), 
-        sizeof(address)
-    );
+        SocketInfo sock_info = init_socket();
 
-    check_bind_or_connect(client_fd, ec); 
+        int client_fd = sock_info.fd;
+        sockaddr_un address = sock_info.address;
 
-    send(client_fd, query.data(), query.size(), 0);
+        int ec = connect(
+            client_fd, 
+            reinterpret_cast<sockaddr*>(&address), 
+            sizeof(address)
+        );
 
-    char buffer[dns_cache::constants::socket_buf_size];
+        check_bind_or_connect(client_fd, ec); 
 
-    const ssize_t n = recv(client_fd, buffer, sizeof(buffer), 0);
+        send(client_fd, query.data(), query.size(), 0);
 
-    if (n > 0) {
-        std::printf("[LOG] Client worker %d received:\n%s\n", id, buffer);
-    } else {
-        std::fprintf(stderr, "[Error] Client worker %d received 0 bytes.\n", id);
+        char buffer[dns_cache::constants::socket_buf_size];
+
+        const ssize_t n = recv(client_fd, buffer, sizeof(buffer), 0);
+
+        if (n > 0) {
+            std::printf("[LOG] Client worker %d received:\n%s\n", id, buffer);
+        } else {
+            std::fprintf(stderr, "[Error] Client worker %d received 0 bytes.\n", id);
+        }
+
+        close(client_fd);
     }
-
-    close(client_fd);
 }
 
 int main() {
@@ -49,10 +54,17 @@ int main() {
 
     std::vector<std::string> queries = read_query_file(query_file_path, num_clients);
 
+    // query strings should live throughout program, queue doesn't realloc
+    RequestQueue<std::string_view> queue{}; 
+
     for (std::size_t i{0}; i < num_clients; i++) {
-        clients.emplace_back([i, &queries] {
-            spawn_client(i + 1, queries[i % queries.size()]);
+        clients.emplace_back([i, &queue] {
+            spawn_client(i + 1, queue);
         });
+    }
+
+    for (std::size_t i{0}; i < num_clients; i++) {
+        queue.produce(queries[i % num_clients]);
     }
 
     for (auto& c : clients) {

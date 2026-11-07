@@ -37,7 +37,6 @@ add_executable(server
     server/src/main.cpp
     server/src/cache.cpp
     server/src/ip.cpp
-    server/src/producer_consumer_queue.cpp
     server/src/database.cpp
     server/src/record_repository.cpp
     server/src/parse_utils.cpp

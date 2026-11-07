@@ -75,7 +75,7 @@ int main() {
     }
 
     Cache cache{};
-    RequestQueue queue{};
+    RequestQueue<int> queue{};
 
     std::vector<std::thread> workers;
     workers.reserve(dns_cache::constants::num_server_workers);
