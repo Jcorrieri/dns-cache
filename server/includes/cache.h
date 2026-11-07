@@ -44,9 +44,9 @@ template <typename T>
 concept CacheLike = requires(
     T& cache, 
     const CacheKey& key,
-    const typename T::value_type& value
+    const DNSResolution& resolution
 ) {
-    { cache.emplace(key, value) };
+    { cache.emplace(key, resolution) };
     { cache.find(key) } -> std::convertible_to<std::optional<typename T::value_type>>;
 };
 
@@ -55,7 +55,7 @@ class KVCache {
 public:
     using value_type = Value;
 
-    void emplace(const CacheKey& key, const Value& value);
+    void emplace(const CacheKey& key, const DNSResolution& resolution);
     std::optional<Value> find(const CacheKey& key);
 
 private:
@@ -69,20 +69,36 @@ private:
 
 struct NaiveEntry {
     std::time_t timestamp;           // Implemented as 8B
-    std::vector<Record> answers;     // Default vec alloc len * sizeof(Record) = N * 184B = a lot
-    std::vector<Record> authority;   // But vec allocates on heap; inline is likely implementation-defined (24B; pointer + length + capacity)
-    std::vector<Record> additional;
-    float ttl{0};
-    std::uint8_t hits{0};
-};                                   // (24 * 3) + 4 + 1 + 8 = 72 + 5 + 8 = 77 + 8 = 85 + (3) for alignment
+    std::vector<NaiveRecord> answers;     // Default vec alloc len * sizeof(NaiveRecord) = N * 184B = a lot
+    std::vector<NaiveRecord> authority;   // But vec allocates on heap; inline is likely implementation-defined (24B; pointer + length + capacity)
+    std::vector<NaiveRecord> additional;
+    float ttl;
+    std::uint8_t hits;
+
+    NaiveEntry(const DNSResolution& resolution)
+        : answers{resolution.answers},
+          authority{resolution.authority},
+          additional{resolution.additional},
+          ttl{0},
+          hits{0}
+    {}
+};                                   
 
 struct OptimizedEntry {
-    std::time_t timestamp;           // Implemented as 8B
-    std::vector<Record> records;
+    std::time_t timestamp;           
+    std::vector<NaiveRecord> records;
     std::uint16_t authority_offset;
     std::uint16_t additional_offset;
     float ttl{0};
     std::uint8_t hits{0};
+
+    OptimizedEntry(const DNSResolution& resolution)
+        : records{},
+          authority_offset{0},
+          additional_offset{0},
+          ttl{0},
+          hits{0}
+    {}
 };
 
 std::ostream& operator<<(std::ostream& os, const NaiveEntry& entry);

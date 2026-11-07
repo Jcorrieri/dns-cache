@@ -68,15 +68,12 @@ RecordData column_text_to_record_data(sqlite3_stmt* stmt, int index, RType rtype
     switch (rtype) {
         case RType::A:
             return RecordData{string_to_IPv4(data)};
-            break;
         case RType::AAAA:
             return RecordData{string_to_IPv6(data)};
-            break;
         case RType::NAPTR:
             break;
         case RType::CNAME:
             return RecordData{data};
-            break;
         default:
             break;
     }

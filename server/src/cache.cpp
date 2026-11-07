@@ -29,10 +29,10 @@ std::ostream& operator<<(std::ostream& os, const NaiveEntry& entry) {
 
 // Need to lock read functions as well to prevent data inconsistency/UB
 template <class Value>
-void KVCache<Value>::emplace(const CacheKey& key, const Value& value) {
+void KVCache<Value>::emplace(const CacheKey& key, const DNSResolution& resolution) {
     std::lock_guard lock{m_mutex};
 
-    m_cache.emplace(key, value);
+    m_cache.emplace(key, resolution);
 }
 
 template <class Value>

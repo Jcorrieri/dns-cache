@@ -20,8 +20,7 @@ private:
     Cache& m_cache;
     sqlite3_stmt* m_stmt;
 
-    CacheEntry fetch_from_db(const CacheKey& key) const;
+    DNSResolution resolve(const CacheKey& key) const;
 };
 
 #endif
-

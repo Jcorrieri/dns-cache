@@ -1,11 +1,11 @@
 #include "record_repository.h"
 
-#include <ctime>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "record.h"
 #include "cache.h"
 #include "common.h"
 #include "parse_utils.h"
@@ -42,15 +42,8 @@ RecordRepository::~RecordRepository() {
     sqlite3_finalize(m_stmt);
 }
 
-CacheEntry RecordRepository::fetch_from_db(const CacheKey& key) const {
-    CacheEntry entry{
-        time(0),
-        std::vector<Record>{},
-        std::vector<Record>{},
-        std::vector<Record>{},
-        dns_cache::constants::default_ttl,
-        0
-    };
+DNSResolution RecordRepository::resolve(const CacheKey& key) const {
+    DNSResolution resolution{};
 
     sqlite3_bind_text(
         m_stmt,
@@ -77,12 +70,12 @@ CacheEntry RecordRepository::fetch_from_db(const CacheKey& key) const {
         auto data = column_text_to_record_data(m_stmt, 2, rtype);
         auto ttl = static_cast<float>(sqlite3_column_double(m_stmt, 3));
 
-        entry.answers.push_back(Record{owner, ttl, rtype, data});
+        resolution.answers.push_back(RecordModel{owner, ttl, rtype, data});
     }
 
     sqlite3_reset(m_stmt);
 
-    return entry;
+    return resolution;
 }
 
 std::optional<CacheEntry> RecordRepository::get_entry(const CacheKey& key) const {
@@ -90,13 +83,15 @@ std::optional<CacheEntry> RecordRepository::get_entry(const CacheKey& key) const
         return *cached;
     }
 
-    CacheEntry entry = fetch_from_db(key);
+    DNSResolution resolution = resolve(key);
 
-    if (entry.answers.empty()) { // TODO: Make dedicated DB type agnostic to cache entry shape
+    if (resolution.answers.empty()) {
         return std::nullopt;
     }
 
-    m_cache.emplace(key, entry);
+    CacheEntry entry{resolution};
+
+    m_cache.emplace(key, resolution);
 
     return entry;
 }
