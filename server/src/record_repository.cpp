@@ -7,7 +7,6 @@
 
 #include "record.h"
 #include "cache.h"
-#include "common.h"
 #include "parse_utils.h"
 #include "sqlite3.h"
 
@@ -24,7 +23,7 @@ RecordRepository::RecordRepository(
             SELECT owner, type, data, ttl
             FROM records
             WHERE owner = :owner
-            AND (type = :rtype OR type = 'CNAME')
+            AND (type = :rtype OR type = 'CNAME' OR type = 'NS')
 
             UNION ALL
 
@@ -32,7 +31,7 @@ RecordRepository::RecordRepository(
             FROM records rc
             JOIN resolve rv
                 ON rc.owner = rv.data 
-                AND (rc.type = :rtype OR rc.type = 'CNAME')
+                AND (rc.type = :rtype OR rc.type = 'CNAME' or rv.type = 'NS')
         )
         SELECT * FROM resolve;
     )");
@@ -63,6 +62,8 @@ DNSResolution RecordRepository::resolve(const CacheKey& key) const {
         SQLITE_TRANSIENT
     );
 
+    std::string authority_ns = "";
+
     int rc;
     while ((rc = sqlite3_step(m_stmt)) == SQLITE_ROW) {
         auto owner = column_text_to_string_view(m_stmt, 0);
@@ -70,7 +71,16 @@ DNSResolution RecordRepository::resolve(const CacheKey& key) const {
         auto data = column_text_to_record_data(m_stmt, 2, rtype);
         auto ttl = static_cast<float>(sqlite3_column_double(m_stmt, 3));
 
-        resolution.answers.push_back(RecordModel{owner, ttl, rtype, data});
+        RecordModel record{owner, ttl, rtype, data};
+
+        if (rtype == RType::NS) {
+            resolution.authority.push_back(record);
+            authority_ns = std::get<std::string>(record.data);
+        } else if (authority_ns == record.owner) {
+            resolution.additional.push_back(record);
+        } else {
+            resolution.answers.push_back(record);
+        }
     }
 
     sqlite3_reset(m_stmt);

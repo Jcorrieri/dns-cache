@@ -19,6 +19,9 @@ std::optional<RType> string_to_rtype(std::string_view type) {
     if (type == "CNAME") {
         return RType::CNAME;
     }
+    if (type == "NS") {
+        return RType::NS;
+    }
     if (type == "NAPTR") {
         return RType::NAPTR;
     }
@@ -34,6 +37,8 @@ std::string_view rtype_to_string(RType rtype) {
             return "AAAA";
         case RType::CNAME:
             return "CNAME";
+        case RType::NS:
+            return "NS";
         case RType::NAPTR:
             return "NAPTR";
     }
@@ -72,6 +77,7 @@ RecordData column_text_to_record_data(sqlite3_stmt* stmt, int index, RType rtype
             return RecordData{string_to_IPv6(data)};
         case RType::NAPTR:
             break;
+        case RType::NS:
         case RType::CNAME:
             return RecordData{data};
         default:

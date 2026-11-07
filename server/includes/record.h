@@ -8,7 +8,7 @@
 
 #include "ip.h"
 
-using RecordData = std::variant<IPv4Address, IPv6Address, Cname, Naptr>; // Should be 136B + 8B tag = 144B
+using RecordData = std::variant<IPv4Address, IPv6Address, Text, Naptr>; // Should be 136B + 8B tag = 144B
 
 enum class RType {
     A,
@@ -16,6 +16,7 @@ enum class RType {
     // TXT,
     // SVCB,
     CNAME,
+    NS,
     NAPTR,
 };
 

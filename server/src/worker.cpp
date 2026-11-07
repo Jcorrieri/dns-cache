@@ -73,7 +73,7 @@ void spawn_worker(int id, RequestQueue& queue, Cache& cache) {
         }
 
         const auto entry = repo.get_entry(*key);
-        
+
         std::ostringstream response;
 
         if (!entry) {

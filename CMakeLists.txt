@@ -76,4 +76,33 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME ip_parsing COMMAND ip_test)
+
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tests/data")
+
+    add_executable(record_repository_test
+        tests/record_repository_test.cpp
+        server/src/cache.cpp
+        server/src/database.cpp
+        server/src/ip.cpp
+        server/src/parse_utils.cpp
+        server/src/record_repository.cpp
+        external/sqlite/sqlite3.c
+    )
+
+    target_include_directories(record_repository_test PRIVATE
+        server/includes
+        common/includes
+        external/sqlite
+    )
+
+    target_link_libraries(record_repository_test PRIVATE
+        common_options
+    )
+
+    add_test(
+        NAME record_resolution
+        COMMAND record_repository_test
+            "${CMAKE_CURRENT_BINARY_DIR}/tests/data/dns.db"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/data/dns.sql"
+    )
 endif()

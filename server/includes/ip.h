@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-using Cname = std::string;
+using Text = std::string;
 
 struct IPv4Address {
     std::array<std::uint8_t, 4> bytes;
