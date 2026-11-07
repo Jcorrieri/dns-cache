@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -eu
+
+build_dir=build
+
+cmake --build "$build_dir" --target ip_test
+ctest --test-dir "$build_dir" --output-on-failure
