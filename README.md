@@ -70,3 +70,9 @@ or update the `records` table with a SQLite-compatible tool.
 ```sh
 ctest --test-dir build
 ```
+
+If desired, run tests before each commit:
+
+```sh
+git config --local core.hooksPath .githooks
+```
