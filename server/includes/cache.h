@@ -91,13 +91,13 @@ struct OptimizedEntry {
     float ttl{0};
     std::uint8_t hits{0};
 
-    OptimizedEntry(const DNSResolution& resolution)
-        : records{},
-          authority_offset{0},
-          additional_offset{0},
-          ttl{0},
-          hits{0}
-    {}
+    // OptimizedEntry(const DNSResolution& resolution)
+    //     : records{},
+    //       authority_offset{0},
+    //       additional_offset{0},
+    //       ttl{0},
+    //       hits{0}
+    // {}
 };
 
 std::ostream& operator<<(std::ostream& os, const NaiveEntry& entry);

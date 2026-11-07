@@ -77,10 +77,12 @@ int main() {
     Cache cache{};
     RequestQueue<int> queue{};
 
-    std::vector<std::thread> workers;
-    workers.reserve(dns_cache::constants::num_server_workers);
+    std::size_t num_workers = dns_cache::constants::num_server_workers;
 
-    for (std::size_t i{0}; i < dns_cache::constants::num_server_workers; i++) {
+    std::vector<std::thread> workers;
+    workers.reserve(num_workers);
+
+    for (std::size_t i{0}; i < num_workers; i++) {
         workers.emplace_back([i, &queue, &cache] {
             spawn_worker(i + 1, queue, cache);
         });
@@ -93,8 +95,8 @@ int main() {
         if (client_fd == -1) {
             std::cerr << "[LOG] accept() failed\n";
             continue;
-        }
-        
+        }       
+
         queue.produce(client_fd);
     }
 

@@ -13,12 +13,16 @@ namespace dns_cache {
         inline constexpr char query_file_path[]{"data/queries.txt"};
         inline constexpr char socket_path[]{"/tmp/dns-cache.sock"};
 
-        inline constexpr std::size_t num_server_workers{10};
-        inline constexpr std::size_t num_clients{7};
+        inline constexpr std::size_t num_server_workers{4};
+        inline constexpr std::size_t num_clients{50};
         inline constexpr std::size_t socket_buf_size{1024};
+        inline constexpr std::size_t queue_capacity{100};
+        inline constexpr std::size_t num_requests{100};
+        inline constexpr float request_interval_ms{10.0};
+        inline constexpr float default_ttl{3600.0};
         inline constexpr int num_connections{16};
-        inline constexpr std::size_t queue_capacity{10};
-        inline constexpr float default_ttl{3600.0F};
+
+        inline constexpr std::string_view CLIENT_STOP_SENTINAL{};
     }
 }
 
