@@ -12,25 +12,11 @@
 #include <variant>
 #include <vector>
 
-#include "ip.h"
+#include "record.h"
 
-using RecordData = std::variant<IPv4Address, IPv6Address, Cname, Naptr>; // Should be 136B + 8B tag = 144B
-
-enum class RType {
-    A,
-    AAAA,
-    // TXT,
-    // SVCB,
-    CNAME,
-    NAPTR,
-};
-
-struct Record {
-    std::string owner; // 32B
-    float ttl{0};         // 4B
-    RType rtype;       // 4B
-    RecordData data;   // 144B 
-};                     // Total 184B
+/*
+ * Shared cache key type
+ */
 
 // A key requires an equality relation and a hash function
 // equality comparison is needed for hash collision resolution
@@ -49,7 +35,39 @@ struct KeyHash {
     std::size_t operator()(const CacheKey& key) const noexcept;
 };
 
-struct CacheEntry {
+/*
+ * Cache concept and template
+ */
+
+// Concept contract for cache types
+template <typename T>
+concept CacheLike = requires(
+    T& cache, 
+    const CacheKey& key,
+    const typename T::value_type& value
+) {
+    { cache.emplace(key, value) };
+    { cache.find(key) } -> std::convertible_to<std::optional<typename T::value_type>>;
+};
+
+template <typename Value>
+class KVCache {
+public:
+    using value_type = Value;
+
+    void emplace(const CacheKey& key, const Value& value);
+    std::optional<Value> find(const CacheKey& key);
+
+private:
+    std::unordered_map<CacheKey, Value, KeyHash> m_cache;
+    mutable std::mutex m_mutex;
+};
+
+/*
+ * Type Implementations
+ */
+
+struct NaiveEntry {
     std::time_t timestamp;           // Implemented as 8B
     std::vector<Record> answers;     // Default vec alloc len * sizeof(Record) = N * 184B = a lot
     std::vector<Record> authority;   // But vec allocates on heap; inline is likely implementation-defined (24B; pointer + length + capacity)
@@ -58,17 +76,24 @@ struct CacheEntry {
     std::uint8_t hits{0};
 };                                   // (24 * 3) + 4 + 1 + 8 = 72 + 5 + 8 = 77 + 8 = 85 + (3) for alignment
 
-std::ostream& operator<<(std::ostream& os, const CacheEntry& entry);
-
-class KVCache {
-    private:
-        std::unordered_map<CacheKey, CacheEntry, KeyHash> m_cache{};
-        mutable std::mutex m_mutex;
-
-    public:
-        void emplace(const CacheKey key, const CacheEntry entry);
-
-        std::optional<CacheEntry> find(const CacheKey key);
+struct OptimizedEntry {
+    std::time_t timestamp;           // Implemented as 8B
+    std::vector<Record> records;
+    std::uint16_t authority_offset;
+    std::uint16_t additional_offset;
+    float ttl{0};
+    std::uint8_t hits{0};
 };
+
+std::ostream& operator<<(std::ostream& os, const NaiveEntry& entry);
+// std::ostream& operator<<(std::ostream& os, const OptimizedEntry& entry);
+
+#ifdef JC_BP_CACHE_USE_OPTIMIZED_ENTRY
+    using Cache = KVCache<OptimizedEntry>;
+#else
+    using Cache = KVCache<NaiveEntry>;
+#endif
+
+using CacheEntry = Cache::value_type;
 
 #endif

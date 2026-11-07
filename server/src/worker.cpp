@@ -55,7 +55,7 @@ namespace {
     }
 }
 
-void spawn_worker(int id, RequestQueue& queue, KVCache& cache) {
+void spawn_worker(int id, RequestQueue& queue, Cache& cache) {
     Database db{dns_cache::constants::db_path};
     RecordRepository repo{db, cache};
 

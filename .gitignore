@@ -64,6 +64,7 @@ vcpkg_installed/
 *.dwo
 
 # test output & cache
+.vscode/
 Testing/
 .cache/
 temp.*

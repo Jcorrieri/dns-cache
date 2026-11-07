@@ -1,15 +1,15 @@
 #ifndef JC_BP_RECORD_REPOSITORY
 #define JC_BP_RECORD_REPOSITORY
 
+#include <optional>
 #include "cache.h"
 #include "database.h"
-#include <optional>
 
 struct sqlite3_stmt;
 
 class RecordRepository {
 public:
-    explicit RecordRepository(Database& db, KVCache& cache);
+    explicit RecordRepository(Database& db, Cache& cache);
 
     ~RecordRepository();
 
@@ -17,7 +17,7 @@ public:
 
 private:
     Database& m_db;
-    KVCache& m_cache;
+    Cache& m_cache;
     sqlite3_stmt* m_stmt;
 
     CacheEntry fetch_from_db(const CacheKey& key) const;

@@ -11,7 +11,11 @@
 #include "parse_utils.h"
 #include "sqlite3.h"
 
-RecordRepository::RecordRepository(Database& db, KVCache& cache)
+
+RecordRepository::RecordRepository(
+    Database& db,
+    Cache& cache
+)
 :
     m_db{db}, m_cache{cache}
 {

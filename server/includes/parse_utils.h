@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-#include "cache.h"
+#include "record.h"
 
 struct sqlite3_stmt;
 

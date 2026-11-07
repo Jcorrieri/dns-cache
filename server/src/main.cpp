@@ -1,16 +1,9 @@
-#include "cache.h"
-#include "common.h"
-#include "database.h"
-#include "producer_consumer_queue.h"
-#include "worker.h"
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/unistd.h>
-#include <sqlite3.h>
-
 #include <cstring>
 #include <iostream>
 #include <sstream>
@@ -18,6 +11,11 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include "cache.h"
+#include "common.h"
+#include "database.h"
+#include "producer_consumer_queue.h"
+#include "worker.h"
 
 int bind_socket() {
     // Remove a stale socket file from a previous execution.
@@ -76,7 +74,7 @@ int main() {
         init_database();
     }
 
-    KVCache cache{};
+    Cache cache{};
     RequestQueue queue{};
 
     std::vector<std::thread> workers;
