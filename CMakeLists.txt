@@ -6,12 +6,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+include(CTest)
+
 add_library(common_options INTERFACE)
 
 target_compile_options(common_options
     INTERFACE
         -Wall
         -Wextra
+        -Wpedantic
 )
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -61,3 +64,16 @@ add_executable(client
 target_link_libraries(client PRIVATE
     common_impl
 )
+
+if(BUILD_TESTING)
+    add_executable(ip_test
+        tests/ip_test.cpp
+        server/src/ip.cpp
+    )
+
+    target_include_directories(ip_test PRIVATE
+        server/includes
+    )
+
+    add_test(NAME ip_parsing COMMAND ip_test)
+endif()

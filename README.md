@@ -64,3 +64,9 @@ On its first run, the server creates `data/dns.db` and loads the sample records 
 or update the `records` table with a SQLite-compatible tool.
 
 [cloudflare-article]: https://blog.cloudflare.com/dns-cache-memory-optimization-1111/
+
+### Run the test suite
+
+```sh
+ctest --test-dir build
+```
