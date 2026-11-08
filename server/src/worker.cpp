@@ -83,9 +83,9 @@ void spawn_worker(int id, RequestQueue<int>& queue, Cache& cache, const Config& 
 
         if (!entry) {
             response << "Entry not in database, resolving upstream...\n";
+        } else {
+            response << *entry;
         }
-
-        response << *entry;
 
         const std::string response_text = response.str();
 
