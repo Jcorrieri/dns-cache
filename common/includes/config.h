@@ -17,13 +17,13 @@ struct Config {
     std::string schema_path;
     std::string query_file_path;
     std::string socket_path;
-    float request_interval_ms;
     float default_ttl;
     std::size_t num_server_workers;
     std::size_t num_client_workers;
     std::size_t queue_capacity;
     std::size_t num_requests;
     int num_connections;
+    int request_interval_ms;
     bool worker_log_info;
 };
 

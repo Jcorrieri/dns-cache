@@ -109,7 +109,7 @@ int main() {
 
     auto next_interval_ts = std::chrono::steady_clock::now();
     auto interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::duration<float, std::milli>(config.request_interval_ms)
+        std::chrono::duration<int, std::milli>(config.request_interval_ms)
     );
 
     for (std::size_t i{0}; i < config.num_requests; i++) {

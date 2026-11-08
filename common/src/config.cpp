@@ -64,7 +64,7 @@ Config load_config() {
         else if (key == "server.default_ttl")         cfg.default_ttl = std::stof(val);
  
         else if (key == "client.num_workers")         cfg.num_client_workers = std::stoul(val);
-        else if (key == "client.request_interval_ms") cfg.request_interval_ms = std::stof(val);
+        else if (key == "client.request_interval_ms") cfg.request_interval_ms = std::stoi(val);
         // unknown keys are ignored
     }
  
