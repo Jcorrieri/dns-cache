@@ -1,5 +1,6 @@
 #include "cache.h"
 #include "database.h"
+#include "config.h"
 #include "producer_consumer_queue.h"
 #include "record_repository.h"
 #include "parse_utils.h"
@@ -11,7 +12,7 @@
 
 namespace {
     std::string read_request(int fd) {
-        char buffer[dns_cache::constants::socket_buf_size];
+        char buffer[constants::socket_buf_size];
 
         const ssize_t n = recv(  // read sizeof(buffer) bytes
             fd,
@@ -55,14 +56,14 @@ namespace {
     }
 }
 
-void spawn_worker(int id, RequestQueue<int>& queue, Cache& cache) {
-    Database db{dns_cache::constants::db_path};
+void spawn_worker(int id, RequestQueue<int>& queue, Cache& cache, const Config& config) {
+    Database db{config.db_path};
     RecordRepository repo{db, cache};
 
     while (true) {
         int fd = queue.consume();
 
-        if (fd == dns_cache::constants::SERVER_STOP_SENTINAL) {
+        if (fd == constants::SERVER_STOP_SENTINAL) {
             return;
         }
 
@@ -97,7 +98,7 @@ void spawn_worker(int id, RequestQueue<int>& queue, Cache& cache) {
 
         close(fd);
 
-        if (dns_cache::constants::worker_log_info) {
+        if (config.worker_log_info) {
             std::cout << std::format("[INFO] worker {} processed {}\n", id, request);
         }
     }

@@ -10,7 +10,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "common.h"
 #include "record.h"
 
 /*
@@ -78,7 +77,7 @@ struct NaiveEntry {
         : answers{resolution.answers},
           authority{resolution.authority},
           additional{resolution.additional},
-          ttl{dns_cache::constants::default_ttl},
+          ttl{constants::default_ttl},
           hits{0}
     {}
 };                                   

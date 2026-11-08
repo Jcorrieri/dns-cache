@@ -10,6 +10,10 @@
 
 using RecordData = std::variant<IPv4Address, IPv6Address, Text, Naptr>; // Should be 136B + 8B tag = 144B
 
+namespace constants {
+    inline constexpr float default_ttl{3600.0};
+}
+
 enum class RType {
     A,
     AAAA,

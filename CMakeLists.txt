@@ -24,7 +24,8 @@ target_link_libraries(common_options INTERFACE
 )
 
 add_library(common_impl STATIC
-    common/src/common.cpp
+    common/src/config.cpp
+    common/src/utils.cpp
 )
 
 target_include_directories(common_impl PUBLIC

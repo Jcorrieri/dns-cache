@@ -1,0 +1,19 @@
+[data]
+db_path = "data/dns.db"
+schema_path = "data/schema.sql"
+query_file_path = "data/queries.txt"
+socket_path = "/tmp/dns-cache.sock"
+
+[shared]
+num_requests = 100
+worker_log_info = true
+
+[server]
+num_workers = 4
+queue_capacity = 100
+max_connections = 20
+default_ttl = 3600.0
+
+[client]
+num_workers = 50
+request_interval_ms = 10.0

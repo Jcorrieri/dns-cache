@@ -12,16 +12,17 @@
 #include <thread>
 #include <vector>
 #include "cache.h"
-#include "common.h"
+#include "config.h"
+#include "utils.h"
 #include "database.h"
 #include "producer_consumer_queue.h"
 #include "worker.h"
 
-int bind_socket() {
+int bind_socket(const Config& config) {
     // Remove a stale socket file from a previous execution.
-    unlink(dns_cache::constants::socket_path);
+    unlink(config.socket_path.c_str());
 
-    SocketInfo sock_info = init_socket();
+    SocketInfo sock_info = init_socket(config.socket_path);
 
     int server_fd = sock_info.fd;
     sockaddr_un address = sock_info.address;
@@ -34,25 +35,25 @@ int bind_socket() {
 
     check_bind_or_connect(server_fd, ec);
 
-    if (listen(server_fd, dns_cache::constants::num_connections) == -1) {
+    if (listen(server_fd, config.num_connections) == -1) {
         close(server_fd);
-        unlink(dns_cache::constants::socket_path);
+        unlink(config.socket_path.c_str());
         throw std::runtime_error{"[ERROR] listen() failed"};
     }
 
-    std::cout << "[INFO] Listening on " << dns_cache::constants::socket_path << '\n';
+    std::cout << "[INFO] Listening on " << config.socket_path << '\n';
 
     return server_fd;
 }
 
-void init_database() {
-    Database db{dns_cache::constants::db_path};
+void init_database(const Config& config) {
+    Database db{config.db_path};
 
-    std::ifstream sql_file(dns_cache::constants::schema_path);
+    std::ifstream sql_file(config.schema_path);
 
     if (!sql_file.is_open()) {
         throw std::runtime_error{
-            std::string{"Could not open file: "} + dns_cache::constants::schema_path
+            std::string{"Could not open file: "} + config.schema_path
         };
     }
 
@@ -68,29 +69,31 @@ void init_database() {
 }
 
 int main() {
-    int server_fd = bind_socket();
+    const Config config = load_config();
 
-    if (!std::filesystem::exists(dns_cache::constants::db_path)) {
-        init_database();
+    int server_fd = bind_socket(config);
+
+    if (!std::filesystem::exists(config.db_path)) {
+        init_database(config);
     }
 
     Cache cache{};
-    RequestQueue<int> queue{};
+    RequestQueue<int> queue{config.queue_capacity};
 
-    std::size_t num_workers = dns_cache::constants::num_server_workers;
+    std::size_t num_workers = config.num_server_workers;
 
     std::vector<std::thread> workers;
     workers.reserve(num_workers);
 
     for (std::size_t i{0}; i < num_workers; i++) {
-        workers.emplace_back([i, &queue, &cache] {
-            spawn_worker(i + 1, queue, cache);
+        workers.emplace_back([i, &queue, &cache, &config] {
+            spawn_worker(i + 1, queue, cache, config);
         });
     }
 
     std::size_t accepted_requests{0};
 
-    while (accepted_requests < dns_cache::constants::num_requests) {
+    while (accepted_requests < config.num_requests) {
         // Not storing client address or address length
         int client_fd = accept(server_fd, nullptr, nullptr);
 
@@ -105,7 +108,7 @@ int main() {
     }
 
     for (std::size_t i{0}; i < num_workers; i++) {
-        queue.produce(dns_cache::constants::SERVER_STOP_SENTINAL);
+        queue.produce(constants::SERVER_STOP_SENTINAL);
     }
 
     for (auto& w : workers) {
@@ -113,7 +116,7 @@ int main() {
     }
 
     close(server_fd);
-    unlink(dns_cache::constants::socket_path);
+    unlink(config.socket_path.c_str());
 
     std::cout << "[INFO] Server finished.\n";
 }

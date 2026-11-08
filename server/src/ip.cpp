@@ -1,5 +1,4 @@
 #include "ip.h"
-
 #include <charconv>
 #include <cstddef>
 #include <cstdio>

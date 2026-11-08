@@ -4,7 +4,7 @@
 #include "cache.h"
 #include "producer_consumer_queue.h"
 
-void spawn_worker(int id, RequestQueue<int>& queue, Cache& cache);
+void spawn_worker(int id, RequestQueue<int>& queue, Cache& cache, const Config& config);
 
 #endif
 

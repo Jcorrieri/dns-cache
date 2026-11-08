@@ -6,13 +6,15 @@
 #include <cstddef>
 #include <optional>
 
-#include "common.h"
-
 // Enqueue at the back, dequeue at the front.
 template<typename T>
 class RequestQueue {
 public:
-    static constexpr std::size_t s_max_size{dns_cache::constants::queue_capacity};
+    const std::size_t m_capacity;
+
+    RequestQueue(std::size_t capacity) : m_capacity{capacity} {
+        m_queue.reserve(capacity);
+    };
 
     bool produce(T value);
 
@@ -30,7 +32,7 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_queue_has_space;
     std::condition_variable m_queue_not_empty;
-    std::array<T, s_max_size> m_queue{};
+    std::vector<T> m_queue;
     std::size_t m_front{0};
     std::size_t m_back{0};
     std::size_t m_size{0};
@@ -41,7 +43,7 @@ bool RequestQueue<T>::produce(T value) {
     {
         std::unique_lock lock{m_mutex};
         m_queue_has_space.wait(lock, [this] {
-            return size() < s_max_size;
+            return size() < m_capacity;
         });
 
         if (!enqueue(value)) {
@@ -73,12 +75,12 @@ T RequestQueue<T>::consume() {
 
 template<typename T>
 bool RequestQueue<T>::enqueue(T value) {
-    if (m_size >= s_max_size) {
+    if (m_size >= m_capacity) {
         return false;
     }
 
     m_queue[m_back] = value;
-    m_back = (m_back + 1) % s_max_size;
+    m_back = (m_back + 1) % m_capacity;
     ++m_size;
 
     return true;
@@ -91,7 +93,7 @@ std::optional<T> RequestQueue<T>::dequeue() {
     }
 
     const T ret_val{m_queue[m_front]};
-    m_front = (m_front + 1) % s_max_size;
+    m_front = (m_front + 1) % m_capacity;
     --m_size;
 
     return ret_val;
