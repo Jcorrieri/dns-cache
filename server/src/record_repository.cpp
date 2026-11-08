@@ -49,7 +49,7 @@ DNSResolution RecordRepository::resolve(const CacheKey& key) const {
         sqlite3_bind_parameter_index(m_stmt, ":owner"),
         key.qname.data(),
         key.qname.size(),
-        SQLITE_TRANSIENT
+        SQLITE_STATIC
     );
 
     const std::string_view rtype_str = rtype_to_string(key.qtype);
@@ -59,7 +59,7 @@ DNSResolution RecordRepository::resolve(const CacheKey& key) const {
         sqlite3_bind_parameter_index(m_stmt, ":rtype"),
         rtype_str.data(),
         rtype_str.size(),
-        SQLITE_TRANSIENT
+        SQLITE_STATIC
     );
 
     std::string authority_ns = "";

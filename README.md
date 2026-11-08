@@ -32,7 +32,6 @@ sudo dnf install sqlite-devel
 Arch Linux
 ```
 sudo pacman -S sqlite
-
 ```
 
 ## Build and run
