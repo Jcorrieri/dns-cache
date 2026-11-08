@@ -47,10 +47,6 @@ add_executable(server
 )
 
 target_include_directories(server PRIVATE
-    ${CMAKE_SOURCE_DIR}/external/sqlite
-)
-
-target_include_directories(server PRIVATE
     server/includes
 )
 
@@ -93,7 +89,6 @@ if(BUILD_TESTING)
     target_include_directories(record_repository_test PRIVATE
         server/includes
         common/includes
-        external/sqlite
     )
 
     target_link_libraries(record_repository_test PRIVATE
