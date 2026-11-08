@@ -17,6 +17,8 @@ target_compile_options(common_options
         -Wpedantic
 )
 
+find_package(SQLite3 REQUIRED)
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(common_options INTERFACE 
@@ -42,7 +44,6 @@ add_executable(server
     server/src/record_repository.cpp
     server/src/parse_utils.cpp
     server/src/worker.cpp
-    external/sqlite/sqlite3.c
 )
 
 target_include_directories(server PRIVATE
@@ -55,6 +56,7 @@ target_include_directories(server PRIVATE
 
 target_link_libraries(server PRIVATE
     common_impl
+    SQLite::SQLite3
 )
 
 add_executable(client
@@ -86,7 +88,6 @@ if(BUILD_TESTING)
         server/src/ip.cpp
         server/src/parse_utils.cpp
         server/src/record_repository.cpp
-        external/sqlite/sqlite3.c
     )
 
     target_include_directories(record_repository_test PRIVATE
@@ -97,6 +98,7 @@ if(BUILD_TESTING)
 
     target_link_libraries(record_repository_test PRIVATE
         common_options
+        SQLite::SQLite3
     )
 
     add_test(

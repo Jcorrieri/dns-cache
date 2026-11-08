@@ -13,27 +13,26 @@ Planned ideas and remaining work are tracked in the
 - Linux or another environment that supports Unix domain sockets
 - A C++20 compiler
 - CMake 3.16 or newer
-- SQLite's C amalgamation source (see below)
+- SQLite libraries
 
 ## SQLite setup
 
-The CMake target compiles SQLite directly from `external/sqlite/sqlite3.c` and expects its
-headers in the same directory. 
+This project links against the SQLite3 shared library, see download instructions below:
 
-### Script
+Ubuntu/Debian
+```
+sudo apt install libsqlite3-dev
+```
 
-Run `./scripts/sqlite_download` to automatically set up the sqlite3 dependencies.
+Fedora/RHEL
+```
+sudo dnf install sqlite-devel
+```
 
-### Manual download
+Arch Linux
+```
+sudo pacman -S sqlite
 
-Download the current SQLite amalgamation archive from the
-[official SQLite download page](https://www.sqlite.org/download.html), then extract at least
-these files into `external/sqlite/`:
-
-```text
-external/sqlite/sqlite3.c
-external/sqlite/sqlite3.h
-external/sqlite/sqlite3ext.h
 ```
 
 ## Build and run
