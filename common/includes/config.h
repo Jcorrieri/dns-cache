@@ -22,6 +22,7 @@ struct Config {
     std::size_t num_client_workers;
     std::size_t queue_capacity;
     std::size_t num_requests;
+    std::size_t num_queries;
     int num_connections;
     int request_interval_ms;
     bool worker_log_info;

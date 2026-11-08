@@ -4,6 +4,7 @@
 #include <mutex>
 #include <optional>
 #include <ostream>
+#include <shared_mutex>
 #include <unordered_map>
 
 std::ostream& operator<<(std::ostream& os, const NaiveEntry& entry) {
@@ -26,20 +27,18 @@ std::ostream& operator<<(std::ostream& os, const NaiveEntry& entry) {
     return os;
 }
 
-// Need to lock read functions as well to prevent data inconsistency/UB
 template <class Value>
 void KVCache<Value>::emplace(const CacheKey& key, const DNSResolution& resolution) {
-    std::lock_guard lock{m_mutex};
+    std::lock_guard lock{m_write_mutex};
 
     m_cache.emplace(key, resolution);
 }
 
 template <class Value>
 std::optional<Value> KVCache<Value>::find(const CacheKey& key) {
-    std::lock_guard lock{m_mutex};
+    std::shared_lock lock{m_read_mutex};
 
     if (auto entry = m_cache.find(key); entry != m_cache.end()) { // cache hit
-        entry->second.hits++;
         return entry->second;
     } 
 

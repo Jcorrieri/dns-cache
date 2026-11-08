@@ -7,6 +7,7 @@
 #include <iosfwd>
 #include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -58,7 +59,8 @@ public:
 
 private:
     std::unordered_map<CacheKey, Value, KeyHash> m_cache;
-    mutable std::mutex m_mutex;
+    mutable std::mutex m_write_mutex;
+    mutable std::shared_mutex m_read_mutex;
 };
 
 /*
@@ -71,14 +73,12 @@ struct NaiveEntry {
     std::vector<NaiveRecord> authority;   // But vec allocates on heap; inline is likely implementation-defined (24B; pointer + length + capacity)
     std::vector<NaiveRecord> additional;
     float ttl;
-    std::uint8_t hits;
 
     NaiveEntry(const DNSResolution& resolution)
         : answers{resolution.answers},
           authority{resolution.authority},
           additional{resolution.additional},
-          ttl{constants::default_ttl},
-          hits{0}
+          ttl{constants::default_ttl}
     {}
 };                                   
 
@@ -88,14 +88,12 @@ struct OptimizedEntry {
     std::uint16_t authority_offset;
     std::uint16_t additional_offset;
     float ttl{0};
-    std::uint8_t hits{0};
 
     // OptimizedEntry(const DNSResolution& resolution)
     //     : records{},
     //       authority_offset{0},
     //       additional_offset{0},
     //       ttl{0},
-    //       hits{0}
     // {}
 };
 

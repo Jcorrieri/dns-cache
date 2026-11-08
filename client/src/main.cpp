@@ -1,4 +1,3 @@
-#include <array>
 #include <cstddef>
 #include <format>
 #include <fstream>
@@ -83,15 +82,16 @@ void spawn_client(
 }
 
 int main() {
+    std::cout << "[INFO] Starting client\n";
+
     const Config config = load_config();
 
     std::vector<std::thread> clients;
     clients.reserve(config.num_client_workers);
 
-    // NOTE: Change to num requests + random selection?
     std::vector<std::string> queries = read_query_file(
         config.query_file_path, 
-        config.num_client_workers // Allow for cache hits when > num_requests
+        config.num_queries
     );
 
     if (queries.empty()) {
