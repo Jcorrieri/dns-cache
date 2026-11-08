@@ -76,3 +76,8 @@ If desired, run tests before each commit:
 ```sh
 git config --local core.hooksPath .githooks
 ```
+
+## Config
+
+Change parameters within `config.toml`. Note that the program does not include a full-spec toml parser and expects
+the existing format (no comments or additional entries).
