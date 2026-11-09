@@ -73,15 +73,6 @@ ByteView column_bytes_view(sqlite3_stmt* stmt, int index) {
     };
 }
 
-RecordView column_to_record_view(sqlite3_stmt* stmt) {
-    return RecordView{
-        column_text_view(stmt, 0),
-        static_cast<float>(sqlite3_column_double(stmt, 3)),
-        column_text_to_rtype(stmt, 1),
-        column_bytes_view(stmt, 2)
-    };
-}
-
 RType column_text_to_rtype(sqlite3_stmt* stmt, int index) {
     const auto type = string_to_rtype(column_text_view(stmt, index));
     if (!type) {

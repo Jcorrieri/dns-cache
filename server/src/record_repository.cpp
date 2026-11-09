@@ -61,7 +61,14 @@ RecordRepository::entry_type RecordRepository::resolve(const CacheKey& key) {
 
     int rc;
     while ((rc = sqlite3_step(m_stmt)) == SQLITE_ROW) {
-        m_materializer.append(column_to_record_view(m_stmt));
+        m_materializer.append(
+            RecordView{
+                column_text_view(m_stmt, 0),
+                static_cast<float>(sqlite3_column_double(m_stmt, 3)),
+                column_text_to_rtype(m_stmt, 1),
+                column_bytes_view(m_stmt, 2)
+            }
+        );
     }
 
     sqlite3_reset(m_stmt);
