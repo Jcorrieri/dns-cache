@@ -29,14 +29,14 @@ std::ostream& operator<<(std::ostream& os, const NaiveEntry& entry) {
 
 template <class Value>
 void KVCache<Value>::emplace(const CacheKey& key, const Value& value) {
-    std::lock_guard lock{m_write_mutex};
+    std::lock_guard lock{m_mutex};
 
     m_cache.emplace(key, value);
 }
 
 template <class Value>
 std::optional<Value> KVCache<Value>::find(const CacheKey& key) {
-    std::shared_lock lock{m_read_mutex};
+    std::shared_lock lock{m_mutex};
 
     if (auto entry = m_cache.find(key); entry != m_cache.end()) { // cache hit
         return entry->second;

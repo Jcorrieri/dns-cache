@@ -59,8 +59,7 @@ public:
 
 private:
     std::unordered_map<CacheKey, Value, KeyHash> m_cache;
-    mutable std::mutex m_write_mutex;
-    mutable std::shared_mutex m_read_mutex;
+    mutable std::shared_mutex m_mutex;
 };
 
 /*
