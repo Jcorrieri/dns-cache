@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <optional>
 #include <stdexcept>
-#include <string>
 #include <string_view>
 
 #include "ip.h"
@@ -46,20 +45,45 @@ std::string_view rtype_to_string(RType rtype) {
     throw std::invalid_argument{"Unsupported record type"};
 }
 
-std::string column_text_to_string_view(sqlite3_stmt* stmt, int index) {
+std::string_view column_text_view(sqlite3_stmt* stmt, int index) {
     const unsigned char* column_text = sqlite3_column_text(stmt, index);
-    int bytes = sqlite3_column_bytes(stmt, index);
+    const int bytes = sqlite3_column_bytes(stmt, index);
 
-    std::string value{
+    if (column_text == nullptr || bytes <= 0) {
+        return {};
+    }
+
+    return {
         reinterpret_cast<const char*>(column_text),
         static_cast<std::size_t>(bytes)
     };
+}
 
-    return value;
+ByteView column_bytes_view(sqlite3_stmt* stmt, int index) {
+    const void* column_data = sqlite3_column_blob(stmt, index);
+    const int bytes = sqlite3_column_bytes(stmt, index);
+
+    if (column_data == nullptr || bytes <= 0) {
+        return {};
+    }
+
+    return {
+        static_cast<const std::byte*>(column_data),
+        static_cast<std::size_t>(bytes)
+    };
+}
+
+RecordView column_to_record_view(sqlite3_stmt* stmt) {
+    return RecordView{
+        column_text_view(stmt, 0),
+        static_cast<float>(sqlite3_column_double(stmt, 3)),
+        column_text_to_rtype(stmt, 1),
+        column_bytes_view(stmt, 2)
+    };
 }
 
 RType column_text_to_rtype(sqlite3_stmt* stmt, int index) {
-    const auto type = string_to_rtype(column_text_to_string_view(stmt, index));
+    const auto type = string_to_rtype(column_text_view(stmt, index));
     if (!type) {
         throw std::invalid_argument{"Unsupported record type in database"};
     }
@@ -67,9 +91,7 @@ RType column_text_to_rtype(sqlite3_stmt* stmt, int index) {
     return *type;
 }
 
-RecordData column_text_to_record_data(sqlite3_stmt* stmt, int index, RType rtype) {
-    std::string data = column_text_to_string_view(stmt, index);
-
+RecordData record_data_from_text(std::string_view data, RType rtype) {
     switch (rtype) {
         case RType::A:
             return RecordData{string_to_IPv4(data)};
@@ -79,7 +101,7 @@ RecordData column_text_to_record_data(sqlite3_stmt* stmt, int index, RType rtype
             break;
         case RType::NS:
         case RType::CNAME:
-            return RecordData{data};
+            return RecordData{Text{data}};
         default:
             break;
     }

@@ -1,14 +1,20 @@
 #ifndef JC_BP_RECORD
 #define JC_BP_RECORD
 
-#include <optional>
-#include <vector>
+#include <cstddef>
+#include <span>
 #include <string>
+#include <string_view>
 #include <variant>
 
 #include "ip.h"
 
-using RecordData = std::variant<IPv4Address, IPv6Address, Text, Naptr>; // Should be 136B + 8B tag = 144B
+using RecordData = std::variant<
+    IPv4Address,
+    IPv6Address,
+    Text,
+    Naptr
+>;
 
 namespace constants {
     inline constexpr float default_ttl{3600.0};
@@ -31,19 +37,14 @@ struct RecordModel {
     RecordData data;   
 };
 
-struct DNSResolution {
-    std::vector<RecordModel> answers;     
-    std::vector<RecordModel> authority;
-    std::vector<RecordModel> additional;
-};                                   
+using ByteView = std::span<const std::byte>;
 
-using NaiveRecord = RecordModel;
-
-struct OptimizedRecord {
-    std::optional<std::string> owner; // 32B or 0B
-    float ttl{0};         // 4B
-    RType rtype;       // 4B
-    RecordData data;   // 144B 
-};                     
+// Views refer to SQLite-owned memory and must not live beyond step() calls.
+struct RecordView {
+    std::string_view owner;
+    float ttl{0};
+    RType rtype;
+    ByteView data;
+};
 
 #endif

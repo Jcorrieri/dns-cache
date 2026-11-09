@@ -8,6 +8,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(CTest)
 
+set(DNS_CACHE_VARIANT "naive" CACHE STRING "Cache implementation variant")
+set_property(
+    CACHE DNS_CACHE_VARIANT
+    PROPERTY STRINGS naive optimized
+)
+
 add_library(common_options INTERFACE)
 
 target_compile_options(common_options
@@ -25,6 +31,15 @@ target_link_libraries(common_options INTERFACE
     Threads::Threads
 )
 
+if(DNS_CACHE_VARIANT STREQUAL "optimized")
+    target_compile_definitions(
+        common_options
+        INTERFACE DNS_CACHE_VARIANT_OPTIMIZED
+    )
+elseif(NOT DNS_CACHE_VARIANT STREQUAL "naive")
+    message(FATAL_ERROR "DNS_CACHE_VARIANT must be naive or optimized")
+endif()
+
 add_library(common_impl STATIC
     common/src/config.cpp
     common/src/utils.cpp
@@ -41,6 +56,7 @@ add_executable(server
     server/src/cache.cpp
     server/src/ip.cpp
     server/src/database.cpp
+    server/src/materializer.cpp
     server/src/record_repository.cpp
     server/src/parse_utils.cpp
     server/src/worker.cpp
@@ -75,6 +91,24 @@ if(BUILD_TESTING)
 
     add_test(NAME ip_parsing COMMAND ip_test)
 
+    add_executable(materializer_test
+        tests/materializer_test.cpp
+        server/src/ip.cpp
+        server/src/materializer.cpp
+        server/src/parse_utils.cpp
+    )
+
+    target_include_directories(materializer_test PRIVATE
+        server/includes
+    )
+
+    target_link_libraries(materializer_test PRIVATE
+        common_options
+        SQLite::SQLite3
+    )
+
+    add_test(NAME native_materializer COMMAND materializer_test)
+
     file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tests/data")
 
     add_executable(record_repository_test
@@ -82,6 +116,7 @@ if(BUILD_TESTING)
         server/src/cache.cpp
         server/src/database.cpp
         server/src/ip.cpp
+        server/src/materializer.cpp
         server/src/parse_utils.cpp
         server/src/record_repository.cpp
     )

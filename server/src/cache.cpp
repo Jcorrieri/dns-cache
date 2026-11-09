@@ -28,10 +28,10 @@ std::ostream& operator<<(std::ostream& os, const NaiveEntry& entry) {
 }
 
 template <class Value>
-void KVCache<Value>::emplace(const CacheKey& key, const DNSResolution& resolution) {
+void KVCache<Value>::emplace(const CacheKey& key, const Value& value) {
     std::lock_guard lock{m_write_mutex};
 
-    m_cache.emplace(key, resolution);
+    m_cache.emplace(key, value);
 }
 
 template <class Value>

@@ -2,7 +2,7 @@
 #define JC_BP_CACHE
 
 #include <cstddef>
-#include <cstdint>
+#include <concepts>
 #include <ctime>
 #include <iosfwd>
 #include <mutex>
@@ -43,9 +43,9 @@ template <typename T>
 concept CacheLike = requires(
     T& cache, 
     const CacheKey& key,
-    const DNSResolution& resolution
+    const typename T::value_type& value
 ) {
-    { cache.emplace(key, resolution) };
+    { cache.emplace(key, value) };
     { cache.find(key) } -> std::convertible_to<std::optional<typename T::value_type>>;
 };
 
@@ -54,7 +54,7 @@ class KVCache {
 public:
     using value_type = Value;
 
-    void emplace(const CacheKey& key, const DNSResolution& resolution);
+    void emplace(const CacheKey& key, const Value& value);
     std::optional<Value> find(const CacheKey& key);
 
 private:
@@ -68,44 +68,19 @@ private:
  */
 
 struct NaiveEntry {
-    std::time_t timestamp;           // Implemented as 8B
-    std::vector<NaiveRecord> answers;     // Default vec alloc len * sizeof(NaiveRecord) = N * 184B = a lot
-    std::vector<NaiveRecord> authority;   // But vec allocates on heap; inline is likely implementation-defined (24B; pointer + length + capacity)
-    std::vector<NaiveRecord> additional;
-    float ttl;
-
-    NaiveEntry(const DNSResolution& resolution)
-        : answers{resolution.answers},
-          authority{resolution.authority},
-          additional{resolution.additional},
-          ttl{constants::default_ttl}
-    {}
-};                                   
-
-struct OptimizedEntry {
-    std::time_t timestamp;           
-    std::vector<NaiveRecord> records;
-    std::uint16_t authority_offset;
-    std::uint16_t additional_offset;
+    std::time_t timestamp{0};         // Implemented as 8B
+    std::vector<RecordModel> answers; // Default vec alloc len * sizeof(RecordModel)
+    std::vector<RecordModel> authority;
+    std::vector<RecordModel> additional;
     float ttl{0};
-
-    // OptimizedEntry(const DNSResolution& resolution)
-    //     : records{},
-    //       authority_offset{0},
-    //       additional_offset{0},
-    //       ttl{0},
-    // {}
 };
 
 std::ostream& operator<<(std::ostream& os, const NaiveEntry& entry);
-// std::ostream& operator<<(std::ostream& os, const OptimizedEntry& entry);
 
-#ifdef JC_BP_CACHE_USE_OPTIMIZED_ENTRY
-    using Cache = KVCache<OptimizedEntry>;
+#ifdef DNS_CACHE_VARIANT_OPTIMIZED
+    using Cache = KVCache<NaiveEntry>;
 #else
     using Cache = KVCache<NaiveEntry>;
 #endif
-
-using CacheEntry = Cache::value_type;
 
 #endif

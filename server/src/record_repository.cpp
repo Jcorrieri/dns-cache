@@ -1,11 +1,8 @@
 #include "record_repository.h"
 
 #include <optional>
-#include <string>
 #include <string_view>
-#include <vector>
 
-#include "record.h"
 #include "cache.h"
 #include "parse_utils.h"
 #include "sqlite3.h"
@@ -41,8 +38,8 @@ RecordRepository::~RecordRepository() {
     sqlite3_finalize(m_stmt);
 }
 
-DNSResolution RecordRepository::resolve(const CacheKey& key) const {
-    DNSResolution resolution{};
+RecordRepository::entry_type RecordRepository::resolve(const CacheKey& key) {
+    m_materializer.reset();
 
     sqlite3_bind_text(
         m_stmt,
@@ -62,46 +59,30 @@ DNSResolution RecordRepository::resolve(const CacheKey& key) const {
         SQLITE_STATIC
     );
 
-    std::string authority_ns = "";
-
     int rc;
     while ((rc = sqlite3_step(m_stmt)) == SQLITE_ROW) {
-        auto owner = column_text_to_string_view(m_stmt, 0);
-        auto rtype = column_text_to_rtype(m_stmt, 1);
-        auto data = column_text_to_record_data(m_stmt, 2, rtype);
-        auto ttl = static_cast<float>(sqlite3_column_double(m_stmt, 3));
-
-        RecordModel record{owner, ttl, rtype, data};
-
-        if (rtype == RType::NS) {
-            resolution.authority.push_back(record);
-            authority_ns = std::get<std::string>(record.data);
-        } else if (authority_ns == record.owner) {
-            resolution.additional.push_back(record);
-        } else {
-            resolution.answers.push_back(record);
-        }
+        m_materializer.append(column_to_record_view(m_stmt));
     }
 
     sqlite3_reset(m_stmt);
 
-    return resolution;
+    return m_materializer.get_entry();
 }
 
-std::optional<CacheEntry> RecordRepository::get_entry(const CacheKey& key) const {
+std::optional<RecordRepository::entry_type> RecordRepository::get_entry(
+    const CacheKey& key
+) {
     if (auto cached = m_cache.find(key)) {
         return *cached;
     }
 
-    DNSResolution resolution = resolve(key);
+    entry_type entry = resolve(key);
 
-    if (resolution.answers.empty()) {
+    if (entry.answers.empty()) {
         return std::nullopt;
     }
 
-    CacheEntry entry{resolution};
-
-    m_cache.emplace(key, resolution);
+    m_cache.emplace(key, entry);
 
     return entry;
 }
