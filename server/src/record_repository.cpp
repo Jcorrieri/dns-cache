@@ -17,17 +17,17 @@ RecordRepository::RecordRepository(
 {
     m_stmt = m_db.prepare(R"(
         WITH RECURSIVE resolve AS (
-            SELECT owner, type, data, ttl
+            SELECT owner, type, target, data, ttl
             FROM records
             WHERE owner = :owner
             AND (type = :rtype OR type = 'CNAME' OR type = 'NS')
 
             UNION ALL
 
-            SELECT rc.owner, rc.type, rc.data, rc.ttl
+            SELECT rc.owner, rc.type, rc.target, rc.data, rc.ttl
             FROM records rc
             JOIN resolve rv
-                ON rc.owner = rv.data 
+                ON rc.owner = rv.target
                 AND (rc.type = :rtype OR rc.type = 'CNAME' or rv.type = 'NS')
         )
         SELECT * FROM resolve;
@@ -61,14 +61,7 @@ RecordRepository::entry_type RecordRepository::resolve(const CacheKey& key) {
 
     int rc;
     while ((rc = sqlite3_step(m_stmt)) == SQLITE_ROW) {
-        m_materializer.append(
-            RecordView{
-                column_text_view(m_stmt, 0),
-                static_cast<float>(sqlite3_column_double(m_stmt, 3)),
-                column_text_to_rtype(m_stmt, 1),
-                column_bytes_view(m_stmt, 2)
-            }
-        );
+        m_materializer.append(column_to_record_view(m_stmt));
     }
 
     sqlite3_reset(m_stmt);

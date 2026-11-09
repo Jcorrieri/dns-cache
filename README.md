@@ -1,5 +1,6 @@
 # DNS Cache
-A multithreaded C++20 DNS caching service using Unix domain socket IPC, SQLite-backed storage, and a shared in-memory cache.
+A multithreaded C++20 DNS caching service using Unix domain socket IPC,
+SQLite-backed storage, and a shared in-memory cache.
 
 I was originally inspired by Cloudflare's article on
 [reducing DNS cache memory usage][cloudflare-article] and its memory optimizations, 
@@ -57,10 +58,6 @@ In another terminal, start the client:
 ./build/client
 ```
 
-On its first run, the server creates `data/dns.db` and loads the sample records from
-`data/schema.sql`. To use different records, edit the schema before the database is created,
-or update the `records` table with a SQLite-compatible tool.
-
 [cloudflare-article]: https://blog.cloudflare.com/dns-cache-memory-optimization-1111/
 
 ### Run the test suite
@@ -77,5 +74,5 @@ git config --local core.hooksPath .githooks
 
 ## Config
 
-Change parameters within `config.toml`. Note that the program does not include a full-spec toml parser and expects
-the existing format (no comments or additional entries).
+Change parameters within `config.toml`. The program does not include a full-spec
+toml parser and expects the existing format (no comments or additional entries).

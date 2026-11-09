@@ -2,6 +2,7 @@
 #define JC_BP_RECORD
 
 #include <cstddef>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -42,9 +43,10 @@ using ByteView = std::span<const std::byte>;
 // Views refer to SQLite-owned memory and must not live beyond step() calls.
 struct RecordView {
     std::string_view owner;
+    std::optional<std::string_view> target;
     float ttl{0};
     RType rtype;
-    ByteView data;
+    std::span<const std::byte> data;
 };
 
 #endif

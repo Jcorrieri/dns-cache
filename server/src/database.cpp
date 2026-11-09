@@ -15,7 +15,9 @@ Database::Database(const std::string& db_path) {
     if (rc != SQLITE_OK) {
         std::string message{sqlite3_errmsg(m_db)};
 
-        sqlite3_close(m_db);
+        if (m_db != nullptr) {
+            sqlite3_close(m_db);
+        }
         m_db = nullptr;
 
         throw std::runtime_error{

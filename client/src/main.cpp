@@ -101,7 +101,7 @@ int main() {
     // query strings should live throughout program, queue doesn't realloc
     RequestQueue<std::string_view> queue{config.queue_capacity}; 
 
-    for (std::size_t i{0}; i < config.num_client_workers; i++) {
+    for (std::size_t i{0}; i < config.num_client_workers; ++i) {
         clients.emplace_back([i, &queue, &config] {
             spawn_client(i + 1, queue, config);
         });
@@ -112,14 +112,14 @@ int main() {
         std::chrono::duration<int, std::milli>(config.request_interval_ms)
     );
 
-    for (std::size_t i{0}; i < config.num_requests; i++) {
+    for (std::size_t i{0}; i < config.num_requests; ++i) {
         queue.produce(queries[i % queries.size()]);
 
         next_interval_ts += interval_ms;
         std::this_thread::sleep_until(next_interval_ts);
     }
 
-    for (std::size_t i{0}; i < config.num_client_workers; i++) {
+    for (std::size_t i{0}; i < config.num_client_workers; ++i) {
         queue.produce(constants::CLIENT_STOP_SENTINAL);
     }
 

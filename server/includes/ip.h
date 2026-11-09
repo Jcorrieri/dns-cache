@@ -5,8 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <iosfwd>
+#include <span>
 #include <string>
-#include <string_view>
 
 using Text = std::string;
 
@@ -16,8 +16,6 @@ struct IPv4Address {
 
 struct IPv6Address {
     std::array<std::uint16_t, 8> bytes;
-    std::size_t start_zeros_idx;
-    std::size_t end_zeros_idx;
 };
 
 struct Naptr {
@@ -29,8 +27,8 @@ struct Naptr {
     std::string textField3;
 };
 
-IPv4Address string_to_IPv4(std::string_view ip);
-IPv6Address string_to_IPv6(std::string_view ip);
+IPv4Address bytes_to_IPv4(std::span<const std::byte> bytes);
+IPv6Address bytes_to_IPv6(std::span<const std::byte> bytes);
 
 std::ostream& operator<<(std::ostream& os, const IPv4Address& addr);
 std::ostream& operator<<(std::ostream& os, const IPv6Address& addr);

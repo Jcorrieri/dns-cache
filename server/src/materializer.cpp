@@ -1,23 +1,8 @@
 #include "materializer.h"
 
-#include <string>
-#include <string_view>
 #include <utility>
 
 #include "parse_utils.h"
-
-namespace {
-std::string_view bytes_to_text(ByteView bytes) {
-    if (bytes.empty()) {
-        return {};
-    }
-
-    return {
-        reinterpret_cast<const char*>(bytes.data()),
-        bytes.size()
-    };
-}
-}
 
 void NativeMaterializer::reset() {
     m_entry = entry_type{};
@@ -26,21 +11,20 @@ void NativeMaterializer::reset() {
 }
 
 void NativeMaterializer::append(const RecordView& view) {
-    const std::string_view data = bytes_to_text(view.data);
     RecordModel record{
         std::string{view.owner},
         view.ttl,
         view.rtype,
-        record_data_from_text(data, view.rtype)
+        record_data_from_view(view)
     };
 
     if (view.rtype == RType::NS) {
-        m_entry.authority.push_back(record);
-        m_authority_ns = std::get<Text>(record.data);
+        m_authority_ns = std::string{*view.target};
+        m_entry.authority.push_back(std::move(record));
     } else if (m_authority_ns == record.owner) {
-        m_entry.additional.push_back(record);
+        m_entry.additional.push_back(std::move(record));
     } else {
-        m_entry.answers.push_back(record);
+        m_entry.answers.push_back(std::move(record));
     }
 }
 

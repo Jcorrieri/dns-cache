@@ -1,51 +1,43 @@
 #include <cassert>
 #include <cstddef>
-#include <string_view>
+#include <array>
+#include <optional>
 
 #include "materializer.h"
-
-namespace {
-ByteView as_bytes(std::string_view text) {
-    if (text.empty()) {
-        return {};
-    }
-
-    return {
-        reinterpret_cast<const std::byte*>(text.data()),
-        text.size()
-    };
-}
-}
+#include "record.h"
 
 int main() {
     NativeMaterializer materializer;
     materializer.reset();
 
-    const std::string_view answer_owner{"example.com"};
-    const std::string_view answer_data{"192.0.2.10"};
+    const std::array<std::byte, 4> answer_data{
+        std::byte{0xc0}, std::byte{0x00}, std::byte{0x02}, std::byte{0x0a}
+    };
     materializer.append({
-        answer_owner,
+        "example.com",
+        std::nullopt,
         3600.0F,
         RType::A,
-        as_bytes(answer_data)
+        ByteView{answer_data},
     });
 
-    const std::string_view authority_owner{"example.com"};
-    const std::string_view authority_data{"ns1.example.com"};
     materializer.append({
-        authority_owner,
+        "example.com",
+        "ns1.example.com",
         3600.0F,
         RType::NS,
-        as_bytes(authority_data)
+        {}
     });
 
-    const std::string_view additional_owner{"ns1.example.com"};
-    const std::string_view additional_data{"192.0.2.53"};
+    const std::array<std::byte, 4> additional_data{
+        std::byte{0xc0}, std::byte{0x00}, std::byte{0x02}, std::byte{0x35}
+    };
     materializer.append({
-        additional_owner,
+        "ns1.example.com",
+        std::nullopt,
         3600.0F,
         RType::A,
-        as_bytes(additional_data)
+        ByteView{additional_data}
     });
 
     auto entry = materializer.get_entry();
@@ -53,17 +45,18 @@ int main() {
     assert(entry.answers.size() == 1);
     assert(entry.authority.size() == 1);
     assert(entry.additional.size() == 1);
-    assert(entry.answers.front().owner == answer_owner);
-    assert(entry.authority.front().owner == authority_owner);
-    assert(entry.additional.front().owner == additional_owner);
-    assert(std::get<Text>(entry.authority.front().data) == authority_data);
+    assert(entry.answers.front().owner == "example.com");
+    assert(entry.authority.front().owner == "example.com");
+    assert(entry.additional.front().owner == "ns1.example.com");
+    assert(std::get<Text>(entry.authority.front().data) == "ns1.example.com");
 
     materializer.reset();
     materializer.append({
-        answer_owner,
+        "example.com",
+        std::nullopt,
         3600.0F,
         RType::A,
-        as_bytes(answer_data)
+        ByteView{answer_data}
     });
 
     entry = materializer.get_entry();

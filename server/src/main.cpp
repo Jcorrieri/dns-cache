@@ -71,12 +71,11 @@ void init_database(const Config& config) {
 int main() {
     const Config config = load_config();
 
-    int server_fd = bind_socket(config);
-
     if (!std::filesystem::exists(config.db_path)) {
         init_database(config);
     }
 
+    int server_fd = bind_socket(config);
     Cache cache{};
     RequestQueue<int> queue{config.queue_capacity};
 
@@ -85,7 +84,7 @@ int main() {
     std::vector<std::thread> workers;
     workers.reserve(num_workers);
 
-    for (std::size_t i{0}; i < num_workers; i++) {
+    for (std::size_t i{0}; i < num_workers; ++i) {
         workers.emplace_back([i, &queue, &cache, &config] {
             spawn_worker(i + 1, queue, cache, config);
         });
@@ -107,7 +106,7 @@ int main() {
         accepted_requests++;
     }
 
-    for (std::size_t i{0}; i < num_workers; i++) {
+    for (std::size_t i{0}; i < num_workers; ++i) {
         queue.produce(constants::SERVER_STOP_SENTINAL);
     }
 

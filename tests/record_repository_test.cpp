@@ -1,6 +1,7 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -50,8 +51,22 @@ void assert_additional_records(const std::vector<RecordModel>& records) {
     assert(found_ipv6);
 }
 
+void assert_cname_answer(const std::vector<RecordModel>& records) {
+    for (const auto& record : records) {
+        if (record.rtype == RType::CNAME) {
+            assert(record.owner == "www.example.com");
+            assert(std::get<Text>(record.data) == "example.com");
+            return;
+        }
+    }
+
+    assert(false);
+}
+
 int main(int argc, char** argv) {
     assert(argc == 3);
+
+    std::filesystem::remove(argv[1]);
 
     Database database{argv[1]};
     database.execute(read_file(argv[2]));
@@ -66,6 +81,12 @@ int main(int argc, char** argv) {
     assert(entry->authority.size() == 1);
     assert_authority_record(entry->authority.front());
     assert_additional_records(entry->additional);
+
+    const CacheKey cname_key{"www.example.com", RType::A};
+    const auto cname_entry = repository.get_entry(cname_key);
+
+    assert(cname_entry.has_value());
+    assert_cname_answer(cname_entry->answers);
 
     return 0;
 }

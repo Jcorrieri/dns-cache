@@ -135,6 +135,6 @@ if(BUILD_TESTING)
         NAME record_resolution
         COMMAND record_repository_test
             "${CMAKE_CURRENT_BINARY_DIR}/tests/data/dns.db"
-            "${CMAKE_CURRENT_SOURCE_DIR}/tests/data/dns.sql"
+            "${CMAKE_CURRENT_SOURCE_DIR}/data/schema.sql"
     )
 endif()
